@@ -1,5 +1,3 @@
-<!-- templates/upload_success.html -->
-
 <!DOCTYPE html>
 <html>
 <head>
@@ -7,12 +5,32 @@
 </head>
 <body>
     <h1>Upload Successful</h1>
-    <p>Summary of your sales data:</p>
+    <p>{{ summary_message }}</p>
+
+    <h2>Summary</h2>
     <ul>
         <li>Total Rows: {{ summary.total_rows }}</li>
-        <li>Total Sales: {{ summary.total_sales }}</li>
-        <li>Date Range: {{ summary.start_date }} to {{ summary.end_date }}</li>
+        <li>Total Sales: ${{ summary.total_sales }}</li>
+        <li>Start Date: {{ summary.start_date }}</li>
+        <li>End Date: {{ summary.end_date }}</li>
     </ul>
-    <a href="{% url 'upload_sales' %}">Upload another file</a>
+
+    <h2>Sales by Month</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>Month</th>
+                <th>Total Sales</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for month, sales in sales_by_month.items %}
+            <tr>
+                <td>{{ month }}</td>
+                <td>${{ sales|floatformat:2 }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
 </body>
 </html>
