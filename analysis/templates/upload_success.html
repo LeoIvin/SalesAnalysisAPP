@@ -1,0 +1,18 @@
+<!-- templates/upload_success.html -->
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Upload Success</title>
+</head>
+<body>
+    <h1>Upload Successful</h1>
+    <p>Summary of your sales data:</p>
+    <ul>
+        <li>Total Rows: {{ summary.total_rows }}</li>
+        <li>Total Sales: {{ summary.total_sales }}</li>
+        <li>Date Range: {{ summary.start_date }} to {{ summary.end_date }}</li>
+    </ul>
+    <a href="{% url 'upload_sales' %}">Upload another file</a>
+</body>
+</html>
