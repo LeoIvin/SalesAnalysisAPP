@@ -2,8 +2,9 @@ import pandas as pd
 import numpy as np
 import plotly.graph_objects as go
 import plotly.express as px
+from jinja2 import Template
 import matplotlib.pyplot as plt
-
+import os
 
 required_columns = ['Product', 'Price', 'Quantity', 'Date']
 
@@ -11,14 +12,17 @@ def process_sales_csv(file):
     # Read data
     try:
         data = pd.read_csv(file)
-    except Exception as e:
-        raise ValueError(f"Error reading data: {e}")
+    except UnicodeDecodeError as e:
+        try:
+            data = pd.read_excel(file)
+        except Exception as e:
+            raise ValueError(f"Error reading data: {e}")
     
     # Ensure column names are consistent
     data.columns = data.columns.str.strip()  # Remove leading/trailing whitespace
     data.columns = data.columns.str.title()  # Standardize case
 
-    # Debug: Print cleaned column names
+
     print(f"Cleaned column names: {data.columns.tolist()}")
 
     # Check for missing required columns
@@ -52,6 +56,7 @@ def process_sales_csv(file):
 
     return data, summary
 
+
 def sales_by_month_analysis(file):
     """
     **Which months have the highest sales?**
@@ -60,7 +65,7 @@ def sales_by_month_analysis(file):
 
     # Group by 'Month' and calculate total sales
     sales_by_month = data.groupby('Month')['Total Sales'].sum()
-    sales_by_month = sales_by_month.sort_values(ascending=False)
+    sales_by_month = sales_by_month.sort_values(ascending=False).head(10)
 
     # Prepare summary message
     best_month = sales_by_month.idxmax()
@@ -68,8 +73,14 @@ def sales_by_month_analysis(file):
     summary_message = f"Best selling month is: {best_month} with ${best_month_sales:.2f} in sales"
 
     # plot sales by month
-    fig = px.bar(sales_by_month, x=sales_by_month.index.astype(str), y=sales_by_month.values, 
+    fig = px.line(sales_by_month, x=sales_by_month.index.astype(str), y=sales_by_month.values, 
                  labels={"x":"Month", "y": "Total Sales"},  title='Total Sales by Month')
-    fig.show()
+    
+    # Convert plot to HTML
+    plot_html = fig.to_html(full_html=False)
 
-    return sales_by_month, summary_message
+    return sales_by_month, summary_message, plot_html
+
+
+
+

@@ -31,6 +31,10 @@
             </tr>
             {% endfor %}
         </tbody>
+        <div>
+            <!-- Render the Plotly plot here -->
+            {{ plot_html|safe }}
+        </div>
     </table>
 </body>
 </html>

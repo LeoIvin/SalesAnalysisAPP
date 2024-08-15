@@ -3,6 +3,9 @@ from django.http import HttpResponse
 from .forms import SalesDataForm
 from .models import SalesData
 from .utils.analysis import process_sales_csv, sales_by_month_analysis
+from rest_framework.response import Response
+from rest_framework import status
+
 
 def upload_sales_data(request):
     if request.method == 'POST':
@@ -14,13 +17,14 @@ def upload_sales_data(request):
                 processed_df, summary = process_sales_csv(sales_data.file.path)
                 
                  # Perform sales by month analysis
-                sales_by_month, summary_message = sales_by_month_analysis(sales_data.file.path)
+                sales_by_month, summary_message, plot_html = sales_by_month_analysis(sales_data.file.path)
 
                 # Prepare context for rendering the template
                 context = {
                     'summary': summary,
                     'sales_by_month': sales_by_month.to_dict(),  # Convert Series to dictionary for easier template use
                     'summary_message': summary_message,
+                    'plot_html': plot_html,
                 }
                 
                 return render(request, 'upload_success.html', context)
