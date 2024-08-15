@@ -1,6 +1,6 @@
 ### **1. Sales Performance:**
    - **Which months have the highest sales?**
-   - **What are the top-selling products?**
+   - **What are the top-selling products?** (By quantity)
 
 ### **2. Product Analysis:**
    - **Which products are the most profitable?** (based on total sales)
