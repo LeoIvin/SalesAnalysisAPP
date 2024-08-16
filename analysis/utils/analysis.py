@@ -1,9 +1,4 @@
 import pandas as pd
-import numpy as np
-import plotly.graph_objects as go
-import plotly.express as px
-from jinja2 import Template
-import matplotlib.pyplot as plt
 import os
 
 required_columns = ['Product', 'Price', 'Quantity', 'Date']
@@ -25,16 +20,31 @@ def normalize_columns(data, column_mapping):
                 break
     return normalized_columns
 
-def process_sales_csv(file):
-    # Read data
+def process_sales_file(file):
+   # Determine file extension
+    file_extension = os.path.splitext(file)[1].lower()
+
+    # Try reading the file based on the file extension
     try:
-        data = pd.read_csv(file)
-    except UnicodeDecodeError as e:
-        try:
-            data = pd.read_excel(file)
-        except Exception as e:
+        if file_extension == '.csv':
+            data = pd.read_csv(file)
+        elif file_extension == '.xls':
+            data = pd.read_excel(file, engine='xlrd')
+        elif file_extension == '.xlsx':
+            data = pd.read_excel(file, engine='openpyxl')
+        else:
+            raise ValueError(f"Unsupported file format: {file_extension}")
+    except Exception as e:
+        # If reading fails, attempt to use xlrd for `.xls` files
+        if file_extension == '.xls':
+            try:
+                import xlrd
+                # Fallback to xlrd
+                data = pd.read_excel(file, engine='xlrd')
+            except Exception as fallback_e:
+                raise ValueError(f"Error reading data with xlrd: {fallback_e}")
+        else:
             raise ValueError(f"Error reading data: {e}")
-    
     # Ensure column names are consistent
     data.columns = data.columns.str.strip()  # Remove leading/trailing whitespace
     data.columns = data.columns.str.title()  # Standardize case
@@ -78,13 +88,11 @@ def process_sales_csv(file):
 
     return data, summary
 
-
-
 def sales_by_month_analysis(file):
     """
     **Which months have the highest sales?**
     """
-    data, summary = process_sales_csv(file)
+    data, summary = process_sales_file(file)
 
     # Group by 'Month' and calculate total sales
     sales_by_month = data.groupby('Month')['Total Sales'].sum()
@@ -97,26 +105,18 @@ def sales_by_month_analysis(file):
 
     return sales_by_month, summary_message
 
-
 def top_selling_products_analysis(file):
     """ 
     **What are the top-selling products?**
     """
-    
-    data, summary = process_sales_csv(file)
+    data, summary = process_sales_file(file)
 
     # Group products by quantities sold
     top_selling_products = data.groupby('Product')['Quantity'].sum()
-    #top_selling_products = top_selling_products.sort_values(ascending=False)
+    top_selling_products = top_selling_products.sort_values(ascending=False)
 
     best_selling_product = top_selling_products.idxmax()
     best_selling_quantity = top_selling_products.max()
     summary_message = f"Best selling product is: {best_selling_product} with {best_selling_quantity:.2f} in quantity"
 
-
     return top_selling_products, summary_message
-
-
-
-
-

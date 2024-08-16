@@ -24,4 +24,4 @@ from analysis import views
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('upload/', views.upload_sales_data, name='upload_sales'),
-] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+]
