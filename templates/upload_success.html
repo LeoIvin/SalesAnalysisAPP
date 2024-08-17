@@ -16,7 +16,7 @@
     </div>
 
     <div>
-        <p>Sales by Month</p>
+        <h1>Sales by Month</h1>
         <p>Summary: {{ summary_month }}</p>
         <div id="sales_by_month_plot"></div>
         <script type="text/javascript">
@@ -26,7 +26,7 @@
     </div>
 
     <div>
-        <p>Top Selling Products By Quantity</p>
+        <h1>Top Selling Products By Quantity</h1>
         <p>Summary: {{ summary_products }}</p>
         <div id="top_selling_products_plot"></div>
         <script type="text/javascript">
@@ -36,7 +36,13 @@
     </div>
 
     <div>
-        <p>Top Selling Products By Total Sales</p>
+        <h1>Top Selling Products By Total Sales</h1>
+        <p>Summary: {{ summary_sales }}</p>
+        <div id="top_selling_by_sales_plot"></div>
+        <script type="text/javascript">
+            var topSellingBySalesPlot = {{ fig_sales|safe }};
+            Plotly.newPlot('top_selling_by_sales_plot', topSellingBySalesPlot.data, topSellingBySalesPlot.layout);
+        </script>
     </div>
 
     <a href="{% url 'upload_sales' %}">Upload another file</a>
