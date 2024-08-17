@@ -106,7 +106,7 @@ def sales_by_month_analysis(file):
         summary_message = f"Best selling month is: {best_month} with ${best_month_sales:.2f} in sales"
 
         # Create bar plot
-        fig = px.line(x=sales_by_month.index, y=sales_by_month.values,
+        fig = px.bar(x=sales_by_month.index, y=sales_by_month.values,
                      labels={"x": "Month", "y": "Total Sales"}, title='Total Sales by Month')
 
         return sales_by_month, summary_message, fig
