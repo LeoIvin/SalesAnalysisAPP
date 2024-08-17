@@ -80,6 +80,7 @@ def process_sales_file(file):
 
     return data, summary
 
+# Sales performance
 def sales_by_month_analysis(file):
     """
     Analyzes sales data to determine which months have the highest sales.
@@ -106,7 +107,7 @@ def sales_by_month_analysis(file):
 
         # Create bar plot
         fig = px.line(x=sales_by_month.index, y=sales_by_month.values,
-                     labels={"x": "Month", "y": "Total Sales"})
+                     labels={"x": "Month", "y": "Total Sales"}, title='Total Sales by Month')
 
         return sales_by_month, summary_message, fig
 
@@ -146,7 +147,12 @@ def top_selling_products_analysis(file):
         return None, f"An error occurred: {e}"
     
 
+# Product analysis
 def top_selling_by_total_sales_analysis(file):
+
+    """
+     **Which products are the most profitable?** (based on total sales)
+    """
 
     try:
         data, summary = process_sales_file(file)
@@ -169,3 +175,50 @@ def top_selling_by_total_sales_analysis(file):
         return top_selling_by_total_sales, summary_message, fig
     except Exception as e:
         return None, f"An error occured {e}"
+    
+
+# Seasonal analysis
+def sales_trends_analysis(file):
+    """
+    Analyzes sales data to determine how sales trends vary throughout the year and identifies significant changes.
+
+    Parameters:
+    file (str): Path to the sales data file.
+
+    Returns:
+    tuple: A tuple containing the sales trends DataFrame, a summary message, and the plotly figure.
+    """
+    try:
+        # Get sales by month data
+        result = sales_by_month_analysis(file)
+        if result is None or any(r is None for r in result):
+            raise ValueError("sales_by_month_analysis returned None")
+
+        sales_by_month, summary_message, fig = result
+
+        # Calculate the month-over-month percentage change in sales
+        sales_by_month = sales_by_month.sort_index()  # Ensure the index is sorted by month
+        sales_by_month_pct_change = sales_by_month.pct_change().dropna()
+
+        # Define a threshold for significant changes (e.g., 20%)
+        threshold = 0.20
+        significant_changes = sales_by_month_pct_change[sales_by_month_pct_change.abs() > threshold]
+
+        # Prepare summary message
+        if not significant_changes.empty:
+            significant_months = significant_changes.index.tolist()
+            summary_message += f"\nSignificant changes in sales were observed in the following months: {', '.join(significant_months)}"
+        else:
+            summary_message += "\nNo significant changes in sales were observed."
+
+        # Create line plot with significant changes highlighted
+        fig = px.line(x=sales_by_month.index, y=sales_by_month.values,
+                      labels={"x": "Month", "y": "Total Sales"}, title='Total Sales by Month')
+        fig.add_scatter(x=significant_changes.index, y=sales_by_month[significant_changes.index],
+                        mode='markers', marker=dict(color='red', size=10), name='Significant Changes')
+
+        return sales_by_month, summary_message, fig
+
+    except Exception as e:
+        print(f"An error occurred in sales_trends_analysis: {e}")
+        return None, f"An error occurred: {e}", None

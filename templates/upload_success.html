@@ -42,10 +42,20 @@
         <script type="text/javascript">
             var topSellingBySalesPlot = {{ fig_sales|safe }};
             Plotly.newPlot('top_selling_by_sales_plot', topSellingBySalesPlot.data, topSellingBySalesPlot.layout);
+            console.log("Plotted!")
         </script>
     </div>
 
-    <a href="{% url 'upload_sales' %}">Upload another file</a>
+    <div>
+        <h1>Sales Trend Analysis</h1>
+        <p>Summary: {{ summary_trends }}</p>
+        <div id="sales_trends_plot"></div>
+        <script type="text/javascript">
+            var salesTrendsPlot = {{ fig_trends|safe }};
+            Plotly.newPlot('sales_trends_plot', salesTrendsPlot.data, salesTrendsPlot.layout);
+        </script>
+    </div>
+    <button><a href="{% url 'upload_sales' %}">Upload another file</a></button>
 </body>
 </html>
  
