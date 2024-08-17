@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Upload Success</title>
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+</head>
+<body>
+    <h1>Upload Successful</h1>
+    <div>
+        <p>Summary of your sales data:</p>
+        <ul>
+            <li>Total Rows: {{ summary.total_rows }}</li>
+            <li>Total Sales: {{ summary.total_sales }}</li>
+            <li>Date Range: {{ summary.start_date }} to {{ summary.end_date }}</li>
+        </ul>
+    </div>
+
+    <div>
+        <p>Sales by Month</p>
+        <p>Summary: {{ summary_month }}</p>
+        <div id="sales_by_month_plot"></div>
+        <script type="text/javascript">
+            var salesByMonthPlot = {{ fig_month|safe }};
+            Plotly.newPlot('sales_by_month_plot', salesByMonthPlot.data, salesByMonthPlot.layout);
+        </script>
+    </div>
+
+    <div>
+        <p>Top Selling Products By Quantity</p>
+        <p>Summary: {{ summary_products }}</p>
+        <div id="top_selling_products_plot"></div>
+        <script type="text/javascript">
+            var topSellingProductsPlot = {{ fig_products|safe }};
+            Plotly.newPlot('top_selling_products_plot', topSellingProductsPlot.data, topSellingProductsPlot.layout);
+        </script>
+    </div>
+
+    <div>
+        <p>Top Selling Products By Total Sales</p>
+    </div>
+
+    <a href="{% url 'upload_sales' %}">Upload another file</a>
+</body>
+</html>
+ 

@@ -60,7 +60,9 @@ MIDDLEWARE = [
 CORS_ALLOWED_ORIGINS = [
     'http://localhost:3000',  # Your frontend origin
     'http://127.0.0.1:3000',
+    'http://127.0.0.1:5500'
 ]
+
 
 ROOT_URLCONF = 'AnalysisAPP.urls'
 
@@ -140,7 +142,8 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.0/howto/static-files/
 
-STATIC_URL = 'static/'
+STATIC_URL = '/static/'
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.0/ref/settings/#default-auto-field

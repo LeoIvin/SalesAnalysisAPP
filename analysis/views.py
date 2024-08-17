@@ -1,39 +1,43 @@
-from django.http import JsonResponse
-from django.views.decorators.csrf import csrf_exempt
-from django.utils.decorators import method_decorator
-from django.views import View
+from django.shortcuts import render
+from django.http import HttpResponse
+from .forms import SalesDataForm
 from .utils.analysis import process_sales_file, sales_by_month_analysis, top_selling_products_analysis
-import pandas as pd
-import io
 
-@csrf_exempt
 def upload_sales_data(request):
-    if request.method == "POST":
-        file = request.FILES.get('file')
-        if file:
+    if request.method == 'POST':
+        form = SalesDataForm(request.POST, request.FILES)
+        if form.is_valid():
+            sales_data = form.save()
             try:
-                if file.name.endswith('.csv'):
-                    processed_df, summary = process_sales_file(file)
-                elif file.name.endswith('.xlsx'):
-                    df = pd.read_excel(file)
-                    file = io.StringIO(df.to_csv(index=False))
-                    processed_df, summary = process_sales_file(file)
-                else:
-                    return JsonResponse({'error': 'Unsupported file format'}, status=400)
+                # Process the uploaded file
+                processed_df, summary = process_sales_file(sales_data.file.path)
 
-                # Perform analysis
-                sales_by_month, summary_message_month, _ = sales_by_month_analysis(file)
-                top_selling_products, summary_message_products, _ = top_selling_products_analysis(file)
+                # Perform sales by month analysis
+                sales_by_month, summary_month, fig_month = sales_by_month_analysis(sales_data.file.path)
 
-                response_data = {
+                # Perform top selling products by quantity analysis
+                top_selling_products, summary_products, fig_products = top_selling_products_analysis(sales_data.file.path)
+
+                # Check if the summary is populated correctly
+                if not (summary and summary_month and summary_products):
+                    raise ValueError("Summary data is missing or invalid.")
+                
+                context = {
                     'summary': summary,
-                    'sales_by_month': sales_by_month.to_dict(),
-                    'top_selling_products': top_selling_products.to_dict()
+                    'summary_month': summary_month,
+                    "fig_month": fig_month.to_json(),
+                    "summary_products": summary_products,
+                    "fig_products": fig_products.to_json()
                 }
-
-                return JsonResponse(response_data)
+                
+                return render(request, 'upload_success.html', context)
             except ValueError as e:
-                return JsonResponse({'error': str(e)}, status=400)
-        else:
-            return JsonResponse({'error': 'No file uploaded'}, status=400)
-    return JsonResponse({'error': 'Invalid request method'}, status=405)
+                # Handle any errors in processing
+                return HttpResponse(f"Error: {str(e)}", status=400)
+            except Exception as e:
+                # Handle any other unexpected errors
+                return HttpResponse(f"An unexpected error occurred: {str(e)}", status=500)
+    else:
+        form = SalesDataForm()
+
+    return render(request, 'upload_sales.html', {'form': form})

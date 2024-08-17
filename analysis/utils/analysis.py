@@ -1,5 +1,7 @@
 import pandas as pd
 import os
+import plotly.express as px 
+
 
 required_columns = ['Product', 'Price', 'Quantity', 'Date']
 
@@ -20,31 +22,17 @@ def normalize_columns(data, column_mapping):
                 break
     return normalized_columns
 
-def process_sales_file(file):
-   # Determine file extension
-    file_extension = os.path.splitext(file)[1].lower()
 
-    # Try reading the file based on the file extension
+def process_sales_file(file):
+    # Read data
     try:
-        if file_extension == '.csv':
-            data = pd.read_csv(file)
-        elif file_extension == '.xls':
-            data = pd.read_excel(file, engine='xlrd')
-        elif file_extension == '.xlsx':
-            data = pd.read_excel(file, engine='openpyxl')
-        else:
-            raise ValueError(f"Unsupported file format: {file_extension}")
-    except Exception as e:
-        # If reading fails, attempt to use xlrd for `.xls` files
-        if file_extension == '.xls':
-            try:
-                import xlrd
-                # Fallback to xlrd
-                data = pd.read_excel(file, engine='xlrd')
-            except Exception as fallback_e:
-                raise ValueError(f"Error reading data with xlrd: {fallback_e}")
-        else:
+        data = pd.read_csv(file)
+    except UnicodeDecodeError as e:
+        try:
+            data = pd.read_excel(file)
+        except Exception as e:
             raise ValueError(f"Error reading data: {e}")
+
     # Ensure column names are consistent
     data.columns = data.columns.str.strip()  # Remove leading/trailing whitespace
     data.columns = data.columns.str.title()  # Standardize case
@@ -61,15 +49,19 @@ def process_sales_file(file):
     if missing:
         raise ValueError(f"File missing one or more required columns: {', '.join(missing)}")
     
-    # Convert Date column to datetime format
+   # Convert Date column to datetime format
     try:
-        data['Date'] = pd.to_datetime(data['Date'], format='%d/%m/%y', errors='coerce')  # Adjust format if needed
+        data['Date'] = pd.to_datetime(data['Date'], format='%d/%m/%y', errors='coerce')
     except Exception as e:
         raise ValueError(f"Error converting Date column to datetime: {e}")
     
-    # Handle any dates that could not be parsed
+    # Drop rows with NaN in the Date column
+    # data = data.dropna(subset=['Date'])
+
+    # Ensure no operations are performed on NaT values
     if data['Date'].isnull().any():
         raise ValueError("Some dates could not be parsed. Please check the date format in the file.")
+
     
     # Calculate total sales
     if 'Total Sales' not in data.columns:
@@ -90,33 +82,90 @@ def process_sales_file(file):
 
 def sales_by_month_analysis(file):
     """
-    **Which months have the highest sales?**
+    Analyzes sales data to determine which months have the highest sales.
+
+    Parameters:
+    file (str): Path to the sales data file.
+
+    Returns:
+    tuple: A tuple containing the sales by month DataFrame, a summary message, and the plotly figure.
     """
-    data, summary = process_sales_file(file)
+    try:
+        data, summary = process_sales_file(file)
 
-    # Group by 'Month' and calculate total sales
-    sales_by_month = data.groupby('Month')['Total Sales'].sum()
-    sales_by_month = sales_by_month.sort_values(ascending=False)
+        # Group by 'Month' and calculate total sales
+        sales_by_month = data.groupby('Month')['Total Sales'].sum().sort_values(ascending=False)
 
-    # Prepare summary message
-    best_month = sales_by_month.idxmax()
-    best_month_sales = sales_by_month.max()
-    summary_message = f"Best selling month is: {best_month} with ${best_month_sales:.2f} in sales"
+        # Convert Period objects to strings
+        sales_by_month.index = sales_by_month.index.astype(str)
 
-    return sales_by_month, summary_message
+        # Prepare summary message
+        best_month = sales_by_month.idxmax()
+        best_month_sales = sales_by_month.max()
+        summary_message = f"Best selling month is: {best_month} with ${best_month_sales:.2f} in sales"
+
+        # Create bar plot
+        fig = px.line(x=sales_by_month.index, y=sales_by_month.values,
+                     labels={"x": "Month", "y": "Total Sales"})
+
+        return sales_by_month, summary_message, fig
+
+    except Exception as e:
+        return None, f"An error occurred: {e}", None
+
 
 def top_selling_products_analysis(file):
     """ 
-    **What are the top-selling products?**
+    Analyzes sales data to determine the top-selling products.
+
+    Parameters:
+    file (str): Path to the sales data file.
+
+    Returns:
+    tuple: A tuple containing the top-selling products DataFrame, a summary message, and the plotly figure.
     """
-    data, summary = process_sales_file(file)
+    try:
+        data, summary = process_sales_file(file)
 
-    # Group products by quantities sold
-    top_selling_products = data.groupby('Product')['Quantity'].sum()
-    top_selling_products = top_selling_products.sort_values(ascending=False)
+        # Group products by quantities sold
+        top_selling_products = data.groupby('Product')['Quantity'].sum().sort_values(ascending=False)
 
-    best_selling_product = top_selling_products.idxmax()
-    best_selling_quantity = top_selling_products.max()
-    summary_message = f"Best selling product is: {best_selling_product} with {best_selling_quantity:.2f} in quantity"
+        # Convert index to strings if necessary
+        top_selling_products.index = top_selling_products.index.astype(str)
 
-    return top_selling_products, summary_message
+        # Prepare summary message
+        best_selling_product = top_selling_products.idxmax()
+        best_selling_quantity = top_selling_products.max()
+        summary_message = f"Best selling product is: {best_selling_product} with {best_selling_quantity:.2f} in quantity"
+
+        fig = px.line(x=top_selling_products.index, y=top_selling_products.values, 
+                     labels={"x": "Products", "y": "Quantity"})
+
+        return top_selling_products, summary_message, fig
+    except Exception as e:
+        return None, f"An error occurred: {e}"
+    
+
+def top_selling_by_total_sales_analysis(file):
+
+    try:
+        data, summary = process_sales_file(file)
+
+        # group products by total sales
+        top_selling_by_total_sales = data.groupby('Product')['Total Sales'].sum().sort_values(ascending=False)
+
+        # Convert index to strings if necessary
+        top_selling_by_total_sales.index = top_selling_by_total_sales.index.astype(str)
+
+        # Prepare summary message
+        best_selling_product = top_selling_by_total_sales.idxmax()
+        best_selling_sales = top_selling_by_total_sales.max()
+        summary_message = f"Best selling product is {best_selling_product} with {best_selling_sales} total sales."
+
+        # plot results
+        fig = px.line(x=top_selling_by_total_sales.index, y=top_selling_by_total_sales.values,
+                      labels={'x': 'Product', 'y': 'Total Sales'})
+        
+        return top_selling_by_total_sales, summary_message, fig
+    except Exception as e:
+        return None, f"An error occured {e}"
