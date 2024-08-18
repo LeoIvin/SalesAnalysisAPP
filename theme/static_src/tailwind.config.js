@@ -5,6 +5,8 @@
  * https://unpkg.com/browse/tailwindcss@latest/stubs/defaultConfig.stub.js
  */
 
+const defaultTheme = require('tailwindcss/defaultTheme')
+
 module.exports = {
     content: [
         /**
@@ -42,7 +44,12 @@ module.exports = {
         // '../../**/*.py'
     ],
     theme: {
-        extend: {},
+        extend: {
+          fontFamily: {
+            archivo: ['Archivo', 'sans-serif'],
+            'ibm-plex-sans': ['IBM Plex Sans', 'sans-serif'],
+            sans: ['Poppins', ...defaultTheme.fontFamily.sans]
+          }
     },
     plugins: [
         /**
@@ -54,4 +61,5 @@ module.exports = {
         require('@tailwindcss/typography'),
         require('@tailwindcss/aspect-ratio'),
     ],
+}
 }
