@@ -28,6 +28,8 @@ module.exports = {
          */
         '../../**/templates/**/*.html',
 
+        'node_modules/preline/dist/*.js',
+
         /**
          * JS: If you use Tailwind CSS in JavaScript, uncomment the following lines and make sure
          * patterns match your project structure.
@@ -48,7 +50,7 @@ module.exports = {
           fontFamily: {
             archivo: ['Archivo', 'sans-serif'],
             'ibm-plex-sans': ['IBM Plex Sans', 'sans-serif'],
-            sans: ['Poppins', ...defaultTheme.fontFamily.sans]
+            poppins: ['Poppins', 'sans-serif'],
           }
     },
     plugins: [
@@ -60,6 +62,7 @@ module.exports = {
         require('@tailwindcss/forms'),
         require('@tailwindcss/typography'),
         require('@tailwindcss/aspect-ratio'),
+        require('preline/plugin'),
     ],
 }
 }

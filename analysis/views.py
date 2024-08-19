@@ -4,6 +4,16 @@ from .forms import SalesDataForm
 from .utils.analysis import (process_sales_file, sales_by_month_analysis, 
                              top_selling_products_analysis, top_selling_by_total_sales_analysis, sales_trends_analysis)
 
+from rest_framework.decorators import api_view
+
+from rest_framework.decorators import authentication_classes, permission_classes
+from rest_framework.authentication import SessionAuthentication, TokenAuthentication
+from rest_framework.permissions import IsAuthenticated
+
+
+@api_view(['POST', 'GET'])
+@authentication_classes([SessionAuthentication, TokenAuthentication])
+@permission_classes([IsAuthenticated])
 def upload_sales_data(request):
     if request.method == 'POST':
         form = SalesDataForm(request.POST, request.FILES)
