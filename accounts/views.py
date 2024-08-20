@@ -20,7 +20,10 @@ from django.urls import reverse
 
 from django.contrib.auth import authenticate, login as auth_login
 
-
+# Root
+@api_view(["GET"])
+def root(request):
+    return render(request, 'login.html')
 
 # DRF API Views
 @api_view(["POST"])
@@ -78,42 +81,39 @@ def signup_view(request):
         password = request.POST.get('password')
         confirm_password = request.POST.get('confirm-password')
 
+        errors = {}
+
         if not username or not email or not password or not confirm_password:
-            return render(request, 'signup.html', {'error': 'All fields are required'})
+            errors['general'] = 'All fields are required'
 
         if password != confirm_password:
-            return render(request, 'signup.html', {'error': 'Passwords do not match'})
+            errors['password'] = 'Passwords do not match'
 
         if User.objects.filter(username=username).exists():
-            return render(request, 'signup.html', {'error': 'Username already exists'})
+            errors['username'] = 'Username already exists'
+
+        if errors:
+            return render(request, 'signup.html', {'errors': errors, 'form_data': request.POST})
 
         try:
             user = User.objects.create_user(username=username, email=email, password=password)
             user.save()
 
-            # Authenticate the user manually
+            # Authenticate the user
             user = authenticate(request, username=username, password=password)
             if user is not None:
-                auth_login(request, user)  # Log the user in
+                auth_login(request, user)
                 return redirect('dashboard')  # Redirect to the dashboard page
 
             # Fallback if authentication fails
-            return render(request, 'signup.html', {'error': 'Authentication failed. Please try logging in.'})
+            errors['authentication'] = 'Authentication failed. Please try logging in.'
+            return render(request, 'signup.html', {'errors': errors, 'form_data': request.POST})
 
         except IntegrityError:
-            return render(request, 'signup.html', {'error': 'Username already exists'})
+            errors['username'] = 'Username already exists'
+            return render(request, 'signup.html', {'errors': errors, 'form_data': request.POST})
         except ValueError as e:
-            return render(request, 'signup.html', {'error': str(e)})
+            errors['general'] = str(e)
+            return render(request, 'signup.html', {'errors': errors, 'form_data': request.POST})
 
     return render(request, 'signup.html')
-
-
-def dashboard_view(request):
-    token = request.session.get('token')
-    if not token:
-        return redirect('login')
-    
-    # Make an authenticated request using the token if needed
-    # Example: headers = {'Authorization': f'Token {token}'}
-
-    return render(request, 'dashboard.html')

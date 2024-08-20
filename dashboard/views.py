@@ -18,3 +18,4 @@ def dashboard_view(request):
     else:
         messages.error(request, 'Failed to retrieve data.')
         return render(request, 'dashboard.html')
+
