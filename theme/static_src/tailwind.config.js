@@ -48,9 +48,10 @@ module.exports = {
     theme: {
         extend: {
           fontFamily: {
-            archivo: ['Archivo', 'sans-serif'],
+            archivo: ['"Archivo"', 'sans-serif'],
             'ibm-plex-sans': ['IBM Plex Sans', 'sans-serif'],
             poppins: ['Poppins', 'sans-serif'],
+            'leauge-spartan': ['"Leauge Spartan"', 'sans-serif'],
           }
     },
     plugins: [

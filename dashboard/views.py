@@ -3,6 +3,9 @@ from django.urls import reverse
 from django.contrib import messages
 import requests
 
+from analysis.views import upload_sales_data
+
+
 def dashboard_view(request):
     token = request.session.get('auth_token')
     if not token:
