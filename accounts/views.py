@@ -1,3 +1,5 @@
+from django.db.models.base import Model as Model
+from django.db.models.query import QuerySet
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 
@@ -20,10 +22,24 @@ from django.urls import reverse
 
 from django.contrib.auth import authenticate, login as auth_login
 
+from django.http import JsonResponse
+from django.contrib.auth.decorators import login_required
+
+from django.views.generic.edit import UpdateView
+from django.views.generic import DetailView
+from django.contrib.auth.mixins import LoginRequiredMixin
+from django.shortcuts import get_object_or_404
+from django.urls import reverse_lazy
+from .models import Profile
+from .forms import ProfileUpdateForm
+from django.forms import forms
+
+
 # Root
+@login_required(login_url='login')
 @api_view(["GET"])
 def root(request):
-    return render(request, 'login.html')
+    return render(request, 'dashboard.html')
 
 # DRF API Views
 @api_view(["POST"])
@@ -61,16 +77,23 @@ def login_view(request):
         username = request.POST.get('username')
         password = request.POST.get('password')
 
+        errors = {}
+
+        # Validate the form input
         if not username or not password:
-            return render(request, 'login.html', {'error': 'All fields are required'})
-
-        user = authenticate(request, username=username, password=password)
-        if user is not None:
-            auth_login(request, user)  # Log the user in
-            return redirect(reverse('upload_sales'))
+            errors['general'] = 'All fields are required.'
         else:
-            return render(request, 'login.html', {'error': 'Invalid username or password'})
+            user = authenticate(request, username=username, password=password)
+            if user is not None:
+                auth_login(request, user)  # Log the user in
+                return redirect(reverse('dashboard_view'))  # Redirect to the desired page after login
+            else:
+                errors['authentication'] = 'Authentication failed. Please check your username and password.'
 
+        # If there are errors, render the login page with errors
+        return render(request, 'login.html', {'errors': errors, 'form_data': request.POST})
+
+    # For GET requests, simply render the login page
     return render(request, 'login.html')
 
 
@@ -103,7 +126,7 @@ def signup_view(request):
             user = authenticate(request, username=username, password=password)
             if user is not None:
                 auth_login(request, user)
-                return redirect('dashboard')  # Redirect to the dashboard page
+                return redirect('update_profile')  # Redirect to the profile update page
 
             # Fallback if authentication fails
             errors['authentication'] = 'Authentication failed. Please try logging in.'
@@ -117,3 +140,37 @@ def signup_view(request):
             return render(request, 'signup.html', {'errors': errors, 'form_data': request.POST})
 
     return render(request, 'signup.html')
+
+
+class ProfileUpdateView(LoginRequiredMixin, UpdateView):
+    model = Profile
+    form_class = ProfileUpdateForm
+    template_name = 'update_profile.html'
+    success_url = reverse_lazy('dashboard_view')
+
+    def clean_email(self):
+        email = self.cleaned_data.get('email')
+        if email and User.objects.filter(email=email).exclude(pk=self.instance.user.pk).exists():
+            raise forms.ValidationError('This email address is already in use. Please supply a different email address.')
+        return email
+
+    def get_object(self, queryset=None):
+        """
+        Retrieve the Profile instance for the logged-in user.
+        If no Profile exists, create one and return it.
+        """
+        try:
+            profile = Profile.objects.get(user=self.request.user)
+        except Profile.DoesNotExist:
+            # Create a profile if it doesn't exist
+            profile = Profile.objects.create(user=self.request.user)
+        return profile
+
+
+class ProfileView(LoginRequiredMixin, DetailView):
+    model = Profile
+    template_name = 'profile.html'
+    context_object_name = 'profile'
+
+    def get_object(self):
+        return self.request.user

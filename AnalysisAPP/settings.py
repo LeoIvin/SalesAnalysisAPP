@@ -29,9 +29,11 @@ ALLOWED_HOSTS = []
 
 import os
 
-# media settings
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+
 
 
 TAILWIND_APP_NAME = 'theme'
@@ -77,9 +79,21 @@ SIMPLE_JWT = {
     'SLIDING_TOKEN_REFRESH_LIFETIME': timedelta(days=1),
 }
 
+# Set session timeout to 30 minutes
+SESSION_COOKIE_AGE = 86400 
+
+# Expire the session when the user closes their browser
+SESSION_EXPIRE_AT_BROWSER_CLOSE = True
+
+# Ensure the session cookie is secure
+SESSION_COOKIE_SECURE = True
+
+LOGIN_URL = '/login/' 
+
 
 # Application definition
 INSTALLED_APPS = [
+    'accounts.apps.AccountsConfig', 
     'rest_framework_swagger',
     'rest_framework',
     'rest_framework.authtoken',

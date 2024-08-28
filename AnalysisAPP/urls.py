@@ -3,10 +3,9 @@ from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
 
-from analysis.views import upload_sales_data
+from analysis.views import upload_sales_data, dashboard_view, notFoundView
 from django.urls import re_path
-from accounts.views import signup, login, test_token, login_view, signup_view, root
-from dashboard.views import dashboard_view
+from accounts.views import signup, login, test_token, login_view, signup_view, root, ProfileUpdateView, ProfileView
 
 
 urlpatterns = [
@@ -25,6 +24,9 @@ urlpatterns = [
     # Template Views
     path('login/', login_view, name='login'),
     path('signup/', signup_view, name='signup'),
-    path('dashboard/', dashboard_view, name='dashboard'),
+    path('profile/', ProfileView.as_view(), name='profile'),
+    path('profile/update/', ProfileUpdateView.as_view(), name='update_profile'),
+    path('dashboard/', dashboard_view, name='dashboard_view'),
+    path('404/', notFoundView, name='404')
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 

@@ -100,16 +100,25 @@ def sales_by_month_analysis(file):
         # Convert Period objects to strings
         sales_by_month.index = sales_by_month.index.astype(str)
 
+        # average sales per month
+        avg_sales_by_month = data.groupby('Month')['Total Sales'].mean().mean()
+
         # Prepare summary message
         best_month = sales_by_month.idxmax()
         best_month_sales = sales_by_month.max()
         summary_message = f"Best selling month is: {best_month} with ${best_month_sales:.2f} in sales"
 
+        summary_month = {
+            "avg_sales_by_month": avg_sales_by_month,
+            "best_month": best_month,
+            "summary_message": summary_message
+        }
+
         # Create bar plot
         fig = px.bar(x=sales_by_month.index, y=sales_by_month.values,
                      labels={"x": "Month", "y": "Total Sales"}, title='Total Sales by Month')
 
-        return sales_by_month, summary_message, fig
+        return sales_by_month, summary_month, fig
 
     except Exception as e:
         return None, f"An error occurred: {e}", None
@@ -139,10 +148,15 @@ def top_selling_products_analysis(file):
         best_selling_quantity = top_selling_products.max()
         summary_message = f"Best selling product is: {best_selling_product} with {best_selling_quantity:.2f} in quantity"
 
+        summary_product = {
+            "highest_selling_product": best_selling_product,
+            "best_selling_quantity": best_selling_quantity,
+            "summary_message": summary_message
+        }
         fig = px.line(x=top_selling_products.index, y=top_selling_products.values, 
                      labels={"x": "Products", "y": "Quantity"})
 
-        return top_selling_products, summary_message, fig
+        return top_selling_products, summary_product, fig
     except Exception as e:
         return None, f"An error occurred: {e}"
     
@@ -168,11 +182,17 @@ def top_selling_by_total_sales_analysis(file):
         best_selling_sales = top_selling_by_total_sales.max()
         summary_message = f"Best selling product is {best_selling_product} with {best_selling_sales} total sales."
 
+        summary_sales = {
+            "best_selling_product": best_selling_product,
+            "highest_sale_recorded": best_selling_sales,
+            "summary_message": summary_message
+        }
+
         # plot results
         fig = px.line(x=top_selling_by_total_sales.index, y=top_selling_by_total_sales.values,
                       labels={'x': 'Product', 'y': 'Total Sales'})
         
-        return top_selling_by_total_sales, summary_message, fig
+        return top_selling_by_total_sales, summary_sales, fig
     except Exception as e:
         return None, f"An error occured {e}"
     
@@ -217,8 +237,15 @@ def sales_trends_analysis(file):
         fig.add_scatter(x=significant_changes.index, y=sales_by_month[significant_changes.index],
                         mode='markers', marker=dict(color='red', size=10), name='Significant Changes')
 
+        # summary_trends = {
+        #     "significant_months": significant_months,
+        #     "summary_message": summary_message
+        # } 
         return sales_by_month, summary_message, fig
 
     except Exception as e:
         print(f"An error occurred in sales_trends_analysis: {e}")
         return None, f"An error occurred: {e}", None
+    
+
+    

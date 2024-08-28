@@ -104,24 +104,24 @@
                     {% csrf_token %}
                     <div class="grid gap-y-4">
 
-                        <!-- General Error -->
-                        {% if errors.general %}
-                        <p class="text-xs text-red-600 mt-2">{{ errors.general }}</p>
-                        {% endif %}
+                          <!-- General Error -->
+                          {% if errors.general %}
+                            <p class="text-xs text-red-600 mt-2">{{ errors.general }}</p>
+                          {% endif %}
 
                         <!-- Username Field -->
                         <div>
                             <label for="username" class="block text-sm mb-2">Username</label>
-                            <input type="text" id="username" name="username" class="py-3 px-4 block w-full border border-gray-200 rounded-lg text-sm focus:border-blue-500 focus:ring-blue-500" value="{{ form_data.username|default_if_none:'' }}">
-                            {% if errors.username %}
-                                <p class="text-xs text-red-600 mt-2">{{ errors.username }}</p>
+                            <input type="text" id="username" name="username" class="py-3 px-4 block w-full border border-gray-200 rounded-lg text-sm focus:border-blue-500 focus:ring-blue-500" value="{{ form_data.username|default_if_none:'' }}" placeholder="John Doe">
+                            {% if errors.authentication %}
+                                <p class="text-xs text-red-600 mt-2">{{ errors.authentication }}</p>
                             {% endif %}
                         </div>
 
                         <!-- Password Field -->
                         <div>
                             <label for="password" class="block text-sm mb-2">Password</label>
-                            <input type="password" id="password" name="password" class="py-3 px-4 block w-full border border-gray-200 rounded-lg text-sm focus:border-blue-500 focus:ring-blue-500" required>
+                            <input type="password" id="password" name="password" class="py-3 px-4 block w-full border border-gray-200 rounded-lg text-sm focus:border-blue-500 focus:ring-blue-500" required placeholder="*****"> 
                             {% if errors.password %}
                                 <p class="text-xs text-red-600 mt-2">{{ errors.password }}</p>
                             {% endif %}
@@ -143,7 +143,7 @@
                 <footer>
                     <h1 class="font-poppins text-sm text-gray-600 mt-8 sm:mt-0 md:mt-0 text-center sm:text-center md:text-center">
                         All rights reserved
-                        &copy; <span id="current-year"></span> <a href="{% url 'dashboard' %}" class="underline hover:text-blue-600 focus:ring-blue-500 font-poppins text-sm">DatusAI</a> 
+                        &copy; <span id="current-year"></span> <a href="{% url 'dashboard_view' %}" class="underline hover:text-blue-600 focus:ring-blue-500 font-poppins text-sm">DatusAI</a> 
                     </h1>
                 </footer>
             </div>

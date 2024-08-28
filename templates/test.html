@@ -1,0 +1,57 @@
+<div class="container mx-auto p-4">
+    <h1 class="text-3xl font-bold mb-10 text-center">Sales Overview</h1>
+    <div class="bg-white p-6 rounded-lg shadow-md mb-6">
+        <p class="text-lg mb-2">Summary of your sales data:</p>
+        <ul class="list-disc list-inside">
+            <li>Total Rows: {{ summary.total_rows }}</li>
+            <li>Total Sales: {{ summary.total_sales }}</li>
+            <li>Date Range: {{ summary.start_date }} to {{ summary.end_date }}</li>
+        </ul>
+    </div>
+
+    <div class="bg-white p-6 rounded-lg shadow-md mb-6">
+        <h2 class="text-2xl font-semibold mb-2">Sales by Month</h2>
+        <p class="mb-4">Summary: {{ summary_month }}</p>
+        <div id="sales_by_month_plot"></div>
+        <script type="text/javascript">
+            var salesByMonthPlot = {{ fig_month|safe }};
+            Plotly.newPlot('sales_by_month_plot', salesByMonthPlot.data, salesByMonthPlot.layout);
+        </script>
+    </div>
+
+    <div class="bg-white p-6 rounded-lg shadow-md mb-6">
+        <h2 class="text-2xl font-semibold mb-2">Top Selling Products By Quantity</h2>
+        <p class="mb-4">Summary: {{ summary_products }}</p>
+        <div id="top_selling_products_plot"></div>
+        <script type="text/javascript">
+            var topSellingProductsPlot = {{ fig_products|safe }};
+            Plotly.newPlot('top_selling_products_plot', topSellingProductsPlot.data, topSellingProductsPlot.layout);
+        </script>
+    </div>
+
+    <div class="bg-white p-6 rounded-lg shadow-md mb-6">
+        <h2 class="text-2xl font-semibold mb-2">Top Selling Products By Total Sales</h2>
+        <p class="mb-4">Summary: {{ summary_sales }}</p>
+        <div id="top_selling_by_sales_plot"></div>
+        <script type="text/javascript">
+            var topSellingBySalesPlot = {{ fig_sales|safe }};
+            Plotly.newPlot('top_selling_by_sales_plot', topSellingBySalesPlot.data, topSellingBySalesPlot.layout);
+            console.log("Plotted!")
+        </script>
+    </div>
+
+    <div class="bg-white p-6 rounded-lg shadow-md mb-11">
+        <h2 class="text-2xl font-semibold mb-2">Sales Trend Analysis</h2>
+        <p class="mb-4">Summary: {{ summary_trends }}</p>
+        <div id="sales_trends_plot"></div>
+        <script type="text/javascript">
+            var salesTrendsPlot = {{ fig_trends|safe }};
+            Plotly.newPlot('sales_trends_plot', salesTrendsPlot.data, salesTrendsPlot.layout);
+        </script>
+    </div>
+    <div class="flex justify-center mb-9">
+        <button class="bg-blue-500 text-white py-2 px-4 rounded hover:bg-blue-700">
+            <a href="{% url 'upload_sales' %}">Upload file</a>
+        </button>
+    </div>
+</div>
