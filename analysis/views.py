@@ -69,14 +69,23 @@ def upload_sales_data(request):
 
     return render(request, 'upload_sales.html', {'form': form})
 
+from django.contrib.auth.mixins import LoginRequiredMixin
+from accounts.models import Profile
+from django.shortcuts import render, get_object_or_404
+from django.utils.decorators import method_decorator
+from django.views import View
 
-@login_required(login_url='login')  
-@api_view(['GET'])
-@authentication_classes([SessionAuthentication, TokenAuthentication])
-@permission_classes([IsAuthenticated])
-def dashboard_view(request):
-        if request.method == "GET":
-            return render(request, 'dashboard.html')
+@method_decorator(login_required(login_url='login'), name='dispatch')
+class DashboardView(LoginRequiredMixin, View):
+    def get(self, request, *args, **kwargs):
+        # Get the profile of the logged-in user
+        profile = get_object_or_404(Profile, user=request.user)
+        
+        # Pass the profile to the template context
+        context = {
+            'profile': profile
+        }
+        return render(request, 'dashboard.html', context)
         
 
 def notFoundView(request):

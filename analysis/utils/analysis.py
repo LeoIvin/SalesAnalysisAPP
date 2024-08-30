@@ -102,6 +102,7 @@ def sales_by_month_analysis(file):
 
         # average sales per month
         avg_sales_by_month = data.groupby('Month')['Total Sales'].mean().mean()
+        avg_sales_by_month = round(avg_sales_by_month)
 
         # Prepare summary message
         best_month = sales_by_month.idxmax()
@@ -111,7 +112,9 @@ def sales_by_month_analysis(file):
         summary_month = {
             "avg_sales_by_month": avg_sales_by_month,
             "best_month": best_month,
-            "summary_message": summary_message
+            "summary_message": summary_message,
+            "sales_by_month_x": sales_by_month.index,
+            "sales_by_month_y": sales_by_month.values
         }
 
         # Create bar plot
@@ -151,7 +154,9 @@ def top_selling_products_analysis(file):
         summary_product = {
             "highest_selling_product": best_selling_product,
             "best_selling_quantity": best_selling_quantity,
-            "summary_message": summary_message
+            "summary_message": summary_message,
+            "top_selling_products_x": top_selling_products.index,
+            "top_selling_products_y": top_selling_products.values
         }
         fig = px.line(x=top_selling_products.index, y=top_selling_products.values, 
                      labels={"x": "Products", "y": "Quantity"})
@@ -185,7 +190,9 @@ def top_selling_by_total_sales_analysis(file):
         summary_sales = {
             "best_selling_product": best_selling_product,
             "highest_sale_recorded": best_selling_sales,
-            "summary_message": summary_message
+            "summary_message": summary_message,
+            "top_selling_by_total_sales_x": top_selling_by_total_sales.index,
+            "top_selling_by_total_sales_y": top_selling_by_total_sales.values
         }
 
         # plot results

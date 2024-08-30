@@ -86,7 +86,7 @@ def login_view(request):
             user = authenticate(request, username=username, password=password)
             if user is not None:
                 auth_login(request, user)  # Log the user in
-                return redirect(reverse('dashboard_view'))  # Redirect to the desired page after login
+                return redirect(reverse('upload_sales'))  # Redirect to the desired page after login
             else:
                 errors['authentication'] = 'Authentication failed. Please check your username and password.'
 
@@ -173,4 +173,5 @@ class ProfileView(LoginRequiredMixin, DetailView):
     context_object_name = 'profile'
 
     def get_object(self):
-        return self.request.user
+        # Fetch the Profile instance associated with the logged-in user
+        return get_object_or_404(Profile, user=self.request.user)
