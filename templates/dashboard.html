@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
-  {% load static %}
   {% load static tailwind_tags %}
+  {% load static %}
 <head>
   {% tailwind_css %}
   <!-- Required Meta Tags Always Come First -->
@@ -27,7 +27,7 @@
   <meta property="og:image" content="https://preline.co/assets/img/og-image.png">
 
   <!-- Title -->
-  <title>Dashboard</title>
+  <title>Your Dashboard</title>
 
   <!-- Favicon -->
   <link rel="shortcut icon" href="../../favicon.ico">
@@ -62,7 +62,7 @@
   <link rel="stylesheet" href="https://preline.co/assets/css/main.min.css">
 </head>
 
-<body class="bg-gray-50 dark:bg-neutral-900 font-poppins">
+<body class="bg-gray-50 dark:bg-neutral-900">
   <!-- ========== HEADER ========== -->
   <header class="sticky top-0 inset-x-0 flex flex-wrap md:justify-start md:flex-nowrap z-[48] w-full bg-white border-b text-sm py-2.5 lg:ps-[260px] dark:bg-neutral-800 dark:border-neutral-700">
     <nav class="px-4 sm:px-6 flex basis-full items-center w-full mx-auto">
@@ -144,7 +144,7 @@
           <!-- Dropdown -->
           <div class="hs-dropdown [--placement:bottom-right] relative inline-flex">
             <button id="hs-dropdown-account" type="button" class="size-[38px] inline-flex justify-center items-center gap-x-2 text-sm font-semibold rounded-full border border-transparent text-gray-800 focus:outline-none disabled:opacity-50 disabled:pointer-events-none dark:text-white" aria-haspopup="menu" aria-expanded="false" aria-label="Dropdown">
-              <img class="shrink-0 size-[38px] rounded-full" src={{ profile.profile_picture.url }} alt="Avatar">
+              <img class="shrink-0 size-[38px] rounded-full" src="https://images.unsplash.com/photo-1568602471122-7832951cc4c5?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=facearea&facepad=2&w=320&h=320&q=80" alt="Avatar">
             </button>
 
             <div class="hs-dropdown-menu transition-[opacity,margin] duration hs-dropdown-open:opacity-100 opacity-0 hidden min-w-60 bg-white shadow-md rounded-lg mt-2 dark:bg-neutral-800 dark:border dark:border-neutral-700 dark:divide-neutral-700 after:h-4 after:absolute after:-bottom-4 after:start-0 after:w-full before:h-4 before:absolute before:-top-4 before:start-0 before:w-full" role="menu" aria-orientation="vertical" aria-labelledby="hs-dropdown-account">
@@ -481,7 +481,7 @@
           <div class="p-4 md:p-5">
             <div class="flex items-center gap-x-2">
               <p class="text-xs uppercase tracking-wide text-gray-500 dark:text-neutral-500">
-                Total sales
+                Total users
               </p>
               <div class="hs-tooltip">
                 <div class="hs-tooltip-toggle">
@@ -491,7 +491,7 @@
                     <path d="M12 17h.01" />
                   </svg>
                   <span class="hs-tooltip-content hs-tooltip-shown:opacity-100 hs-tooltip-shown:visible opacity-0 transition-opacity inline-block absolute invisible z-10 py-1 px-2 bg-gray-900 text-xs font-medium text-white rounded shadow-sm dark:bg-neutral-700" role="tooltip">
-                    Total sales over according to your data
+                    The number of daily users
                   </span>
                 </div>
               </div>
@@ -499,16 +499,16 @@
 
             <div class="mt-1 flex items-center gap-x-2">
               <h3 class="text-xl sm:text-2xl font-medium text-gray-800 dark:text-neutral-200">
-                ${{ summary.total_sales }}
+                72,540
               </h3>
-              {% comment %} <span class="flex items-center gap-x-1 text-green-600">
+              <span class="flex items-center gap-x-1 text-green-600">
                 <svg class="inline-block size-4 self-center" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                   <polyline points="22 7 13.5 15.5 8.5 10.5 2 17" />
                   <polyline points="16 7 22 7 22 13" />
                 </svg>
                 <span class="inline-block text-sm">
                   1.7%
-                </span> {% endcomment %}
+                </span>
               </span>
             </div>
           </div>
@@ -520,13 +520,13 @@
           <div class="p-4 md:p-5">
             <div class="flex items-center gap-x-2">
               <p class="text-xs uppercase tracking-wide text-gray-500 dark:text-neutral-500">
-                AVG. Sales Per Month
+                Sessions
               </p>
             </div>
 
             <div class="mt-1 flex items-center gap-x-2">
               <h3 class="text-xl sm:text-2xl font-medium text-gray-800 dark:text-neutral-200">
-               ${{ summary_month.avg_sales_by_month }}
+                29.4%
               </h3>
             </div>
           </div>
@@ -538,15 +538,15 @@
           <div class="p-4 md:p-5">
             <div class="flex items-center gap-x-2">
               <p class="text-xs uppercase tracking-wide text-gray-500 dark:text-neutral-500">
-                Best Selling Product
+                Avg. Click Rate
               </p>
             </div>
 
             <div class="mt-1 flex items-center gap-x-2">
               <h3 class="text-xl sm:text-2xl font-medium text-gray-800 dark:text-neutral-200">
-                {{ summary_products.highest_selling_product }}
+                56.8%
               </h3>
-              {% comment %} <span class="flex items-center gap-x-1 text-red-600">
+              <span class="flex items-center gap-x-1 text-red-600">
                 <svg class="inline-block size-4 self-center" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                   <polyline points="22 17 13.5 8.5 8.5 13.5 2 7" />
                   <polyline points="16 17 22 17 22 11" />
@@ -554,7 +554,7 @@
                 <span class="inline-block text-sm">
                   1.7%
                 </span>
-              </span> {% endcomment %}
+              </span>
             </div>
           </div>
         </div>
@@ -565,13 +565,13 @@
           <div class="p-4 md:p-5">
             <div class="flex items-center gap-x-2">
               <p class="text-xs uppercase tracking-wide text-gray-500 dark:text-neutral-500">
-                Highest Quantity Sold
+                Pageviews
               </p>
             </div>
 
             <div class="mt-1 flex items-center gap-x-2">
               <h3 class="text-xl sm:text-2xl font-medium text-gray-800 dark:text-neutral-200">
-                {{ summary_sales.highest_sale_recorded }}
+                92,913
               </h3>
             </div>
           </div>
