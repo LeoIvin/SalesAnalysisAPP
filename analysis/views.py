@@ -1,4 +1,3 @@
-from django.shortcuts import render
 from django.http import HttpResponse
 from .forms import SalesDataForm
 from .utils.analysis import (process_sales_file, sales_by_month_analysis, 
@@ -39,12 +38,10 @@ def upload_sales_data(request):
                 # Check if the summary is populated correctly
                 if not (summary and summary_month and summary_products and summary_sales and summary_trends):
                     raise ValueError("Summary data is missing or invalid.")
-                
-                # Additional Metrics 
-                
 
+            
                 # Convert figures to JSON format for rendering in templates
-                context = {
+                data = {
                     'summary': summary,
                     'summary_month': summary_month,
                     "fig_month": fig_month.to_json(),
@@ -57,21 +54,22 @@ def upload_sales_data(request):
                     # "fig_trends": fig_trends.to_json()
                 }
                 
-                return render(request, 'dashboard.html', context)
+                return Response(data, status=200)
             except ValueError as e:
                 # Handle known errors in processing
-                return HttpResponse(f"Error: {str(e)}", status=400)
+                return Response(f"Error: {str(e)}", status=400)
             except Exception as e:
                 # Handle unexpected errors
-                return HttpResponse(f"An unexpected error occurred: {str(e)}", status=500)
+                return Response({"error": f"An unexpected error occurred: {str(e)}"}, status=500)
+        else:
+            return Response({"error": "Invalid form data"}, status=400)
     else:
-        form = SalesDataForm()
-
-    return render(request, 'upload_sales.html', {'form': form})
+        return Response({"error": "GET method not supported for file upload"}, status=405)
+ 
 
 from django.contrib.auth.mixins import LoginRequiredMixin
 from accounts.models import Profile
-from django.shortcuts import render, get_object_or_404
+from django.shortcuts import get_object_or_404
 from django.utils.decorators import method_decorator
 from django.views import View
 
@@ -80,16 +78,18 @@ class DashboardView(LoginRequiredMixin, View):
     def get(self, request, *args, **kwargs):
         # Get the profile of the logged-in user
         profile = get_object_or_404(Profile, user=request.user)
-        
-        # Pass the profile to the template context
-        context = {
-            'profile': profile
+
+        profile_data = {
+            'first_name': profile.first_name,
+            'last_name': profile.last_name,
+            'company': profile.company_name,
+            'gender': profile.gender
         }
-        return render(request, 'dashboard.html', context)
+
+        return Response({profile_data}, status=200)
         
 
-def notFoundView(request):
-    pass
+
 
 
 

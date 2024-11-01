@@ -10,7 +10,6 @@ from django.contrib.auth.models import User
 from django.db import IntegrityError
 
 from django.shortcuts import get_object_or_404
-from django.shortcuts import render, redirect
 
 
 from rest_framework.decorators import authentication_classes, permission_classes
@@ -35,11 +34,6 @@ from .forms import ProfileUpdateForm
 from django.forms import forms
 
 
-# Root
-@login_required(login_url='login')
-@api_view(["GET"])
-def root(request):
-    return render(request, 'dashboard.html')
 
 # DRF API Views
 @api_view(["POST"])
@@ -71,106 +65,71 @@ def test_token(request):
     return Response(f"passed for {request.user.username}")
 
 
-# Django Template Views
-def login_view(request):
-    if request.method == "POST":
-        username = request.POST.get('username')
-        password = request.POST.get('password')
-
-        errors = {}
-
-        # Validate the form input
-        if not username or not password:
-            errors['general'] = 'All fields are required.'
-        else:
-            user = authenticate(request, username=username, password=password)
-            if user is not None:
-                auth_login(request, user)  # Log the user in
-                return redirect(reverse('upload_sales'))  # Redirect to the desired page after login
-            else:
-                errors['authentication'] = 'Authentication failed. Please check your username and password.'
-
-        # If there are errors, render the login page with errors
-        return render(request, 'login.html', {'errors': errors, 'form_data': request.POST})
-
-    # For GET requests, simply render the login page
-    return render(request, 'login.html')
-
-
-def signup_view(request):
-    if request.method == 'POST':
-        username = request.POST.get('username')
-        email = request.POST.get('email')
-        password = request.POST.get('password')
-        confirm_password = request.POST.get('confirm-password')
-
-        errors = {}
-
-        if not username or not email or not password or not confirm_password:
-            errors['general'] = 'All fields are required'
-
-        if password != confirm_password:
-            errors['password'] = 'Passwords do not match'
-
-        if User.objects.filter(username=username).exists():
-            errors['username'] = 'Username already exists'
-
-        if errors:
-            return render(request, 'signup.html', {'errors': errors, 'form_data': request.POST})
-
-        try:
-            user = User.objects.create_user(username=username, email=email, password=password)
-            user.save()
-
-            # Authenticate the user
-            user = authenticate(request, username=username, password=password)
-            if user is not None:
-                auth_login(request, user)
-                return redirect('update_profile')  # Redirect to the profile update page
-
-            # Fallback if authentication fails
-            errors['authentication'] = 'Authentication failed. Please try logging in.'
-            return render(request, 'signup.html', {'errors': errors, 'form_data': request.POST})
-
-        except IntegrityError:
-            errors['username'] = 'Username already exists'
-            return render(request, 'signup.html', {'errors': errors, 'form_data': request.POST})
-        except ValueError as e:
-            errors['general'] = str(e)
-            return render(request, 'signup.html', {'errors': errors, 'form_data': request.POST})
-
-    return render(request, 'signup.html')
-
 
 class ProfileUpdateView(LoginRequiredMixin, UpdateView):
     model = Profile
     form_class = ProfileUpdateForm
-    template_name = 'update_profile.html'
-    success_url = reverse_lazy('dashboard_view')
-
-    def clean_email(self):
-        email = self.cleaned_data.get('email')
-        if email and User.objects.filter(email=email).exclude(pk=self.instance.user.pk).exists():
-            raise forms.ValidationError('This email address is already in use. Please supply a different email address.')
-        return email
+    success_url = reverse_lazy('dashboard_view')  # Optional, won't be used in JSON response
 
     def get_object(self, queryset=None):
         """
         Retrieve the Profile instance for the logged-in user.
         If no Profile exists, create one and return it.
         """
-        try:
-            profile = Profile.objects.get(user=self.request.user)
-        except Profile.DoesNotExist:
-            # Create a profile if it doesn't exist
-            profile = Profile.objects.create(user=self.request.user)
+        profile, created = Profile.objects.get_or_create(user=self.request.user)
         return profile
+
+    def form_valid(self, form):
+        # Validate the form and save the profile
+        self.object = form.save()
+        response_data = {
+            'message': 'Profile updated successfully.',
+            'profile': {
+                'username': self.object.user.username,
+                'email': self.object.user.email,
+                'first_name': self.object.first_name,
+                'last_name': self.object.last_name,
+                'profile_picture': self.object.profile_picture.url if self.object.profile_picture else None,
+                'company_name': self.object.company_name,
+                'gender': self.object.gender,
+                'mobile_number': self.object.mobile_number,
+            }
+        }
+        return JsonResponse(response_data, status=200)
+
+    def form_invalid(self, form):
+        # Return validation errors as JSON
+        errors = form.errors.as_json()
+        return JsonResponse({'errors': errors}, status=400)
+
+    def clean_email(self):
+        # Ensure email is unique
+        email = self.cleaned_data.get('email')
+        if email and User.objects.filter(email=email).exclude(pk=self.instance.user.pk).exists():
+            raise forms.ValidationError('This email address is already in use. Please supply a different email address.')
+        return email
 
 
 class ProfileView(LoginRequiredMixin, DetailView):
     model = Profile
-    template_name = 'profile.html'
-    context_object_name = 'profile'
+
+    def get(self, request, *args, **kwargs):
+        # Fetch the Profile instance associated with the logged-in user
+        profile = self.get_object()
+
+        # Prepare the profile data as a JSON response
+        profile_data = {
+            'username': profile.user.username,
+            'email': profile.user.email,
+            'first_name': profile.first_name,
+            'last_name': profile.last_name,
+            'profile_picture': profile.profile_picture.url if profile.profile_picture else None,
+            'company_name': profile.company_name,
+            'gender': profile.gender,
+            'mobile_number': profile.mobile_number,
+        }
+
+        return JsonResponse(profile_data)
 
     def get_object(self):
         # Fetch the Profile instance associated with the logged-in user
