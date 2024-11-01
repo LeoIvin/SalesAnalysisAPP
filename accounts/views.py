@@ -3,7 +3,7 @@ from django.db.models.query import QuerySet
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 
-from .serializers import UserSerializer
+from .serializers import UserSerializer, ProfileSerializer
 from rest_framework import status
 from rest_framework.authtoken.models import Token
 from django.contrib.auth.models import User
@@ -32,6 +32,8 @@ from django.urls import reverse_lazy
 from .models import Profile
 from .forms import ProfileUpdateForm
 from django.forms import forms
+
+from rest_framework.views import APIView
 
 
 
@@ -66,48 +68,24 @@ def test_token(request):
 
 
 
-class ProfileUpdateView(LoginRequiredMixin, UpdateView):
-    model = Profile
-    form_class = ProfileUpdateForm
-    success_url = reverse_lazy('dashboard_view')  # Optional, won't be used in JSON response
+class ProfileUpdateView(LoginRequiredMixin, APIView):
+    permission_classes = [IsAuthenticated]
 
-    def get_object(self, queryset=None):
+    def get_object(self):
         """
         Retrieve the Profile instance for the logged-in user.
-        If no Profile exists, create one and return it.
         """
-        profile, created = Profile.objects.get_or_create(user=self.request.user)
-        return profile
+        return get_object_or_404(Profile, user=self.request.user)
 
-    def form_valid(self, form):
-        # Validate the form and save the profile
-        self.object = form.save()
-        response_data = {
-            'message': 'Profile updated successfully.',
-            'profile': {
-                'username': self.object.user.username,
-                'email': self.object.user.email,
-                'first_name': self.object.first_name,
-                'last_name': self.object.last_name,
-                'profile_picture': self.object.profile_picture.url if self.object.profile_picture else None,
-                'company_name': self.object.company_name,
-                'gender': self.object.gender,
-                'mobile_number': self.object.mobile_number,
-            }
-        }
-        return JsonResponse(response_data, status=200)
+    def patch(self, request, *args, **kwargs):
+        profile = self.get_object
+        serializer = ProfileSerializer(profile, data=request.data, partial=True) # Allow partial updates
 
-    def form_invalid(self, form):
-        # Return validation errors as JSON
-        errors = form.errors.as_json()
-        return JsonResponse({'errors': errors}, status=400)
-
-    def clean_email(self):
-        # Ensure email is unique
-        email = self.cleaned_data.get('email')
-        if email and User.objects.filter(email=email).exclude(pk=self.instance.user.pk).exists():
-            raise forms.ValidationError('This email address is already in use. Please supply a different email address.')
-        return email
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 class ProfileView(LoginRequiredMixin, DetailView):

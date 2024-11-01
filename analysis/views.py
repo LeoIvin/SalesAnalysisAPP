@@ -9,6 +9,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.exceptions import NotAuthenticated, AuthenticationFailed
 from django.contrib.auth.decorators import login_required
+from django.http import JsonResponse
 
 @login_required(login_url='login')  
 @api_view(['POST', 'GET'])
@@ -86,7 +87,7 @@ class DashboardView(LoginRequiredMixin, View):
             'gender': profile.gender
         }
 
-        return Response({profile_data}, status=200)
+        return JsonResponse(profile_data, status=200)
         
 
 
