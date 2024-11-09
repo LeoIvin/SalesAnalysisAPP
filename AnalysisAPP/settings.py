@@ -79,8 +79,8 @@ SIMPLE_JWT = {
     'SLIDING_TOKEN_REFRESH_LIFETIME': timedelta(days=1),
 }
 
-# Set session timeout to 30 minutes
-SESSION_COOKIE_AGE = 86400 
+# Set session timeout to 60 minutes
+SESSION_COOKIE_AGE = 3600 
 
 # Expire the session when the user closes their browser
 SESSION_EXPIRE_AT_BROWSER_CLOSE = True
@@ -98,8 +98,6 @@ INSTALLED_APPS = [
     'rest_framework',
     'rest_framework.authtoken',
     'django_browser_reload',
-    'theme',
-    'tailwind',
     'corsheaders',
     'analysis',
     'django.contrib.admin',
@@ -168,6 +166,15 @@ REST_FRAMEWORK = {
     'DEFAULT_RENDERER_CLASSES': (
         'rest_framework.renderers.JSONRenderer',
     ),
+
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+        'rest_framework.authentication.TokenAuthentication',
+        'rest_framework.authentication.SessionAuthentication',
+    ),
+
+    # 'DEFAULT_PERMISSION_CLASSES': [
+    #     'rest_framework.permissions.IsAuthenticated',
+    # ],
 }
 
 

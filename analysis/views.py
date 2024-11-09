@@ -11,7 +11,16 @@ from rest_framework.exceptions import NotAuthenticated, AuthenticationFailed
 from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse
 
-@login_required(login_url='login')  
+from django.views.decorators.csrf import csrf_exempt
+
+from django.contrib.auth.mixins import LoginRequiredMixin
+from accounts.models import Profile
+from django.shortcuts import get_object_or_404
+from django.utils.decorators import method_decorator
+from django.views import View
+
+
+
 @api_view(['POST', 'GET'])
 @authentication_classes([SessionAuthentication, TokenAuthentication])
 @permission_classes([IsAuthenticated])
@@ -50,8 +59,8 @@ def upload_sales_data(request):
                     "fig_products": fig_products.to_json(),
                     "summary_sales": summary_sales,
                     "fig_sales": fig_sales.to_json(),
-                    "sales_trends": sales_trends,
-                    "summary_trends": summary_trends,
+                    # "sales_trends": sales_trends,
+                    # "summary_trends": summary_trends,
                     # "fig_trends": fig_trends.to_json()
                 }
                 
@@ -68,28 +77,24 @@ def upload_sales_data(request):
         return Response({"error": "GET method not supported for file upload"}, status=405)
  
 
-from django.contrib.auth.mixins import LoginRequiredMixin
-from accounts.models import Profile
-from django.shortcuts import get_object_or_404
-from django.utils.decorators import method_decorator
-from django.views import View
 
-@method_decorator(login_required(login_url='login'), name='dispatch')
-class DashboardView(LoginRequiredMixin, View):
+class DashboardView(View):
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsAuthenticated]
+
     def get(self, request, *args, **kwargs):
         # Get the profile of the logged-in user
-        profile = get_object_or_404(Profile, user=request.user)
-
-        profile_data = {
-            'first_name': profile.first_name,
-            'last_name': profile.last_name,
-            'company': profile.company_name,
-            'gender': profile.gender
+       dashboard = get_object_or_404(Profile, user=request.user)
+       dashboard_data = {
+            'first_name':dashboard.first_name,
+            'last_name':dashboard.last_name,
+            'company':dashboard.company_name,
+            'gender':dashboard.gender
         }
-
-        return JsonResponse(profile_data, status=200)
+       
+       return JsonResponse(dashboard_data, status=200)
         
-
+# For dashboard, render the profile data.
 
 
 

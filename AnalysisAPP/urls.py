@@ -8,6 +8,8 @@ from django.urls import re_path
 from accounts.views import signup, login, test_token, ProfileUpdateView, ProfileView
 
 
+
+
 urlpatterns = [
     path("__reload__/", include("django_browser_reload.urls")),
     path("admin/", admin.site.urls),
@@ -16,7 +18,7 @@ urlpatterns = [
     path('api/login/', login, name='login_api'),
     path('api/signup/', signup, name='signup_api'),
     path('test_token/', test_token, name='test_token'),
-    path('dashboard/', DashboardView.as_view(), name='dashboard_view'),
+    # path('dashboard/', DashboardView.as_view(), name='dashboard_view'),
     path('profile/update/', ProfileUpdateView.as_view(), name='update_profile'),
     path('profile/', ProfileView.as_view(), name='profile'),
 

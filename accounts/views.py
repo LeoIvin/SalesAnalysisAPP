@@ -34,31 +34,49 @@ from .forms import ProfileUpdateForm
 from django.forms import forms
 
 from rest_framework.views import APIView
-
+from django.views.decorators.csrf import csrf_exempt
 
 
 # DRF API Views
 @api_view(["POST"])
 def login(request):
-    user = get_object_or_404(User, username=request.data['username'])
-    if not user.check_password(request.data['password']):
-        return Response("missing user", status=status.HTTP_404_NOT_FOUND)
+    username = request.data.get("username")
+    password = request.data.get("password")
+
+    if not username or not password:
+        return Response({"error": "Username and password are required."}, status=status.HTTP_400_BAD_REQUEST)
+    
+    user = authenticate(username=username, password=password)
+
+    if user is None:
+        return Response({"error": "Invalid credentials."}, status=status.HTTP_401_UNAUTHORIZED)
+    
+    # Generate or retrieve token
     token, created = Token.objects.get_or_create(user=user)
+
     serializer = UserSerializer(user)
-    return Response({"token": token.key, "user": serializer.data})
+
+    return Response({"token": token.key, "user": serializer.data}, status=status.HTTP_200_OK)
 
 
 @api_view(["POST"])
 def signup(request):
     serializer = UserSerializer(data=request.data)
+
     if serializer.is_valid():
-        serializer.save()
-        user = User.objects.get(username=request.data['username'])
-        user.set_password(request.data['password'])
+        user = serializer.save()
+        user.set_password(request.data['password']) # Hash the password
         user.save()
+
+        # Generate a token for the new user
         token = Token.objects.create(user=user)
-        return Response({"token": token.key, "user": serializer.data})
-    return Response(serializer.error, status=status.HTTP_400_BAD_REQUEST)
+        
+        # Return token and user data
+        return Response({"token": token.key, "user": serializer.data}, status=status.HTTP_201_CREATED)
+    
+    # Handle invalid data by returning validation errors
+    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        
 
 @api_view(['GET'])
 @authentication_classes([SessionAuthentication, TokenAuthentication])
@@ -68,34 +86,34 @@ def test_token(request):
 
 
 
-class ProfileUpdateView(LoginRequiredMixin, APIView):
+# Profile Update View using APIView
+class ProfileUpdateView(APIView):
+    authentication_classes = [TokenAuthentication]
     permission_classes = [IsAuthenticated]
 
     def get_object(self):
-        """
-        Retrieve the Profile instance for the logged-in user.
-        """
+        # Retrieve the Profile instance for the logged-in user
         return get_object_or_404(Profile, user=self.request.user)
 
     def patch(self, request, *args, **kwargs):
-        profile = self.get_object
-        serializer = ProfileSerializer(profile, data=request.data, partial=True) # Allow partial updates
+        profile = self.get_object()
+        serializer = ProfileSerializer(profile, data=request.data, partial=True)
 
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data, status=status.HTTP_200_OK)
-        
+
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-class ProfileView(LoginRequiredMixin, DetailView):
-    model = Profile
+# Profile Detail View using APIView
+class ProfileView(APIView):
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsAuthenticated]
 
     def get(self, request, *args, **kwargs):
         # Fetch the Profile instance associated with the logged-in user
-        profile = self.get_object()
-
-        # Prepare the profile data as a JSON response
+        profile = get_object_or_404(Profile, user=request.user)
         profile_data = {
             'username': profile.user.username,
             'email': profile.user.email,
@@ -106,9 +124,6 @@ class ProfileView(LoginRequiredMixin, DetailView):
             'gender': profile.gender,
             'mobile_number': profile.mobile_number,
         }
+        return JsonResponse(profile_data, status=200)
 
-        return JsonResponse(profile_data)
 
-    def get_object(self):
-        # Fetch the Profile instance associated with the logged-in user
-        return get_object_or_404(Profile, user=self.request.user)
