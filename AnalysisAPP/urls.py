@@ -3,7 +3,7 @@ from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
 
-from analysis.views import upload_sales_data, DashboardView
+from analysis.views import upload_sales_data
 from django.urls import re_path
 from accounts.views import signup, login, test_token, ProfileUpdateView, ProfileView
 
@@ -13,6 +13,7 @@ from accounts.views import signup, login, test_token, ProfileUpdateView, Profile
 urlpatterns = [
     path("__reload__/", include("django_browser_reload.urls")),
     path("admin/", admin.site.urls),
+   
 
     # API Endpoints
     path('api/login/', login, name='login_api'),

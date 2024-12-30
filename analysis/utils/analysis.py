@@ -1,144 +1,201 @@
+from unicodedata import decimal
 import pandas as pd
 import os
 import plotly.express as px 
+from decimal import Decimal, InvalidOperation, ROUND_HALF_UP
+from datetime import datetime
 
+def safe_decimal_convert(value):
+    """
+    Safely convert a value to Decimal, handling various numeric formats.
+    """
+    try:
+        if pd.isna(value) or value is None:
+            return Decimal('0')
+        if isinstance(value, (int, float)):
+            return Decimal(str(value)).quantize(Decimal('.01'), rounding=ROUND_HALF_UP)
+        if isinstance(value, str):
+            # Remove any currency symbols and thousands separators
+            cleaned = value.replace('$', '').replace(',', '').strip()
+            return Decimal(cleaned).quantize(Decimal('.01'), rounding=ROUND_HALF_UP)
+        if isinstance(value, Decimal):
+            return value.quantize(Decimal('.01'), rounding=ROUND_HALF_UP)
+        return Decimal('0')
+    except (InvalidOperation, ValueError, TypeError):
+        return Decimal('0')
 
-required_columns = ['Product', 'Price', 'Quantity', 'Date']
-
-COLUMN_MAPPING = {
-    'Product': ['Product', 'Item', 'Goods'],
-    'Quantity': ['Quantity', 'Qty', 'Amount'],
-    'Price': ['Price', 'Cost', 'Unit Price'],
-    'Date': ['Date', 'Order Date', 'Transaction Date'],
-    'Total Sales': ['Total Sales', 'Revenue', 'Sales']
-}
-
-def normalize_columns(data, column_mapping):
-    normalized_columns = {}
-    for standard_col, alternatives in column_mapping.items():
-        for alt in alternatives:
-            if alt in data.columns:
-                normalized_columns[standard_col] = alt
-                break
-    return normalized_columns
-
+def parse_date(date_str):
+    """
+    Try multiple date formats to parse a date string.
+    """
+    if pd.isna(date_str):
+        return None
+        
+    date_formats = [
+        '%Y-%m-%d',
+        '%d/%m/%Y',
+        '%m/%d/%Y',
+        '%d-%m-%Y',
+        '%Y/%m/%d',
+        '%d/%m/%y',
+        '%y-%m-%d',
+        '%m-%d-%y',
+        '%d-%m-%y'
+    ]
+    
+    if isinstance(date_str, (datetime, pd.Timestamp)):
+        return date_str
+        
+    if isinstance(date_str, str):
+        for fmt in date_formats:
+            try:
+                return pd.to_datetime(date_str, format=fmt)
+            except:
+                continue
+                
+    try:
+        # Try pandas default parser as last resort
+        return pd.to_datetime(date_str)
+    except:
+        return None
 
 def process_sales_file(file):
-    # Read data
-    try:
-        data = pd.read_csv(file)
-    except UnicodeDecodeError as e:
-        try:
-            data = pd.read_excel(file)
-        except Exception as e:
-            raise ValueError(f"Error reading data: {e}")
-
-    # Ensure column names are consistent
-    data.columns = data.columns.str.strip()  # Remove leading/trailing whitespace
-    data.columns = data.columns.str.title()  # Standardize case
-
-    # Normalize column names
-    normalized_cols = normalize_columns(data, COLUMN_MAPPING)
-    data.rename(columns=normalized_cols, inplace=True)
+    """
+    Process sales data file with improved error handling and decimal conversion.
+    """
+    required_columns = ['Product', 'Price', 'Quantity', 'Date']
     
-    # Print the cleaned column names for debugging purposes
-    print(f"Cleaned column names: {data.columns.tolist()}")
-
-    # Check for missing required columns
-    missing = [column for column in required_columns if column not in data.columns]
-    if missing:
-        raise ValueError(f"File missing one or more required columns: {', '.join(missing)}")
-    
-   # Convert Date column to datetime format
-    try:
-        data['Date'] = pd.to_datetime(data['Date'], format='%d/%m/%y', errors='coerce')
-    except Exception as e:
-        raise ValueError(f"Error converting Date column to datetime: {e}")
-    
-    # Drop rows with NaN in the Date column
-    # data = data.dropna(subset=['Date'])
-
-    # Ensure no operations are performed on NaT values
-    if data['Date'].isnull().any():
-        raise ValueError("Some dates could not be parsed. Please check the date format in the file.")
-
-    
-    # Calculate total sales
-    if 'Total Sales' not in data.columns:
-        data['Total Sales'] = data['Quantity'] * data['Price']
-    
-    # Add a 'Month' column for grouping
-    data['Month'] = data['Date'].dt.to_period('M')
-
-    # Summary
-    summary = {
-        'total_rows': len(data),
-        'total_sales': data['Total Sales'].sum(),
-        'start_date': data['Date'].min(),
-        'end_date': data['Date'].max()
+    COLUMN_MAPPING = {
+        'Product': ['Product', 'Item', 'Goods'],
+        'Quantity': ['Quantity', 'Qty', 'Amount'],
+        'Price': ['Price', 'Cost', 'Unit Price'],
+        'Date': ['Date', 'Order Date', 'Transaction Date'],
+        'Total Sales': ['Total Sales', 'Revenue', 'Sales']
     }
 
-    return data, summary
-
-# Sales performance
-def sales_by_month_analysis(file):
-    """
-    Analyzes sales data to determine which months have the highest sales.
-
-    Parameters:
-    file (str): Path to the sales data file.
-
-    Returns:
-    tuple: A tuple containing the sales by month DataFrame, a summary message, and the plotly figure.
-    """
     try:
-        data, summary = process_sales_file(file)
+        # Read data with proper error handling
+        try:
+            data = pd.read_csv(file)
+        except UnicodeDecodeError:
+            try:
+                data = pd.read_excel(file)
+            except Exception as e:
+                raise ValueError(f"Unable to read file. Error: {str(e)}")
 
-        # Group by 'Month' and calculate total sales
-        sales_by_month = data.groupby('Month')['Total Sales'].sum().sort_values(ascending=False)
+        # Clean and normalize column names
+        data.columns = data.columns.str.strip().str.title()
+        
+        # Normalize column names using mapping
+        normalized_cols = {}
+        for standard_col, alternatives in COLUMN_MAPPING.items():
+            for alt in alternatives:
+                if alt in data.columns:
+                    normalized_cols[alt] = standard_col
+                    break
+        
+        data.rename(columns=normalized_cols, inplace=True)
 
-        # Convert Period objects to strings
-        sales_by_month.index = sales_by_month.index.astype(str)
+        # Verify required columns
+        missing_cols = [col for col in required_columns if col not in data.columns]
+        if missing_cols:
+            raise ValueError(f"Missing required columns: {', '.join(missing_cols)}")
 
-        # average sales per month
-        avg_sales_by_month = data.groupby('Month')['Total Sales'].mean().mean()
-        avg_sales_by_month = round(avg_sales_by_month)
+        # Convert Date column with improved parsing
+        data['Date'] = data['Date'].apply(parse_date)
+        
+        # Check if any dates were successfully parsed
+        if data['Date'].isnull().all():
+            raise ValueError("Could not parse any dates in the Date column")
 
-        # Prepare summary message
-        best_month = sales_by_month.idxmax()
-        best_month_sales = sales_by_month.max()
-        summary_message = f"Best selling month is: {best_month} with ${best_month_sales:.2f} in sales"
+        # Drop rows with invalid dates
+        data = data.dropna(subset=['Date'])
+        
+        if len(data) == 0:
+            raise ValueError("No valid data rows after parsing dates")
 
-        summary_month = {
-            "avg_sales_by_month": avg_sales_by_month,
-            "best_month": best_month,
-            "summary_message": summary_message,
-            "sales_by_month_x": sales_by_month.index,
-            "sales_by_month_y": sales_by_month.values
+        # Convert numeric columns with proper decimal handling
+        data['Price'] = data['Price'].apply(safe_decimal_convert)
+        data['Quantity'] = pd.to_numeric(data['Quantity'], errors='coerce').fillna(0).astype(int)
+
+        # Calculate or clean Total Sales
+        if 'Total Sales' not in data.columns:
+            data['Total Sales'] = data.apply(
+                lambda row: safe_decimal_convert(float(row['Price']) * float(row['Quantity'])), 
+                axis=1
+            )
+        else:
+            data['Total Sales'] = data['Total Sales'].apply(safe_decimal_convert)
+
+        # Extract year and month for grouping
+        data['Month'] = data['Date'].dt.strftime('%Y-%m')
+
+        # Calculate summary statistics with proper decimal handling
+        total_sales = sum(data['Total Sales'], Decimal('0'))
+        avg_price = total_sales / Decimal(str(len(data))) if len(data) > 0 else Decimal('0')
+        
+        summary = {
+            'total_rows': int(len(data)),
+            'total_sales': str(total_sales.quantize(Decimal('.01'), rounding=ROUND_HALF_UP)),
+            'start_date': data['Date'].min().strftime('%Y-%m-%d'),
+            'end_date': data['Date'].max().strftime('%Y-%m-%d'),
+            'average_price': str(avg_price.quantize(Decimal('.01'), rounding=ROUND_HALF_UP))
         }
 
-        # Create bar plot
-        fig = px.bar(x=sales_by_month.index, y=sales_by_month.values,
-                     labels={"x": "Month", "y": "Total Sales"}, title='Total Sales by Month')
-
-        return sales_by_month, summary_month, fig
+        return data, summary
 
     except Exception as e:
-        return None, f"An error occurred: {e}", None
+        raise ValueError(f"Error processing sales file: {str(e)}")
 
+def sales_by_month_analysis(file):
+    """
+    Analyze sales data by month with proper decimal handling and error checking.
+    """
+    try:
+        # Process the file
+        data, summary = process_sales_file(file)
+
+        # Group by Month and calculate total sales
+        sales_by_month = data.groupby('Month')['Total Sales'].agg(sum)
+        sales_by_month = sales_by_month.sort_values(ascending=False)
+
+        # Calculate average monthly sales with proper decimal handling
+        total_sales = sum(sales_by_month.values, Decimal('0'))
+        num_months = Decimal(str(len(sales_by_month)))
+        avg_sales = total_sales / num_months if num_months > 0 else Decimal('0')
+        avg_sales = avg_sales.quantize(Decimal('.01'), rounding=ROUND_HALF_UP)
+
+        # Find best performing month
+        best_month = sales_by_month.index[0]
+        best_month_sales = safe_decimal_convert(sales_by_month.iloc[0])
+
+        # Prepare the summary dictionary with proper decimal handling
+        summary_month = {
+            "avg_sales_by_month": str(avg_sales),
+            "best_month": best_month,
+            "best_month_sales": str(best_month_sales),
+            "summary_message": f"Best selling month is: {best_month} with ${best_month_sales:,.2f} in sales",
+        }
+
+        # Convert numpy arrays to lists for JSON serialization
+        fig_x = sales_by_month.index.tolist()
+        fig_y = [float(safe_decimal_convert(x)) for x in sales_by_month.values]
+
+        return sales_by_month, summary_month, fig_x, fig_y
+
+    except Exception as e:
+        error_msg = f"Error in sales_by_month_analysis: {str(e)}"
+        return None, {"error": error_msg}, None, None
 
 def top_selling_products_analysis(file):
     """ 
     Analyzes sales data to determine the top-selling products.
-
-    Parameters:
-    file (str): Path to the sales data file.
-
-    Returns:
-    tuple: A tuple containing the top-selling products DataFrame, a summary message, and the plotly figure.
     """
     try:
         data, summary = process_sales_file(file)
+
+        # Convert the 'Quantity' column to Decimal
+        data['Quantity'] = data['Quantity'].apply(Decimal)
 
         # Group products by quantities sold
         top_selling_products = data.groupby('Product')['Quantity'].sum().sort_values(ascending=False)
@@ -149,30 +206,26 @@ def top_selling_products_analysis(file):
         # Prepare summary message
         best_selling_product = top_selling_products.idxmax()
         best_selling_quantity = top_selling_products.max()
-        summary_message = f"Best selling product is: {best_selling_product} with {best_selling_quantity:.2f} in quantity"
+        summary_message = f"Best selling product is: {best_selling_product} with {best_selling_quantity} in quantity"
 
         summary_product = {
             "highest_selling_product": best_selling_product,
             "best_selling_quantity": best_selling_quantity,
             "summary_message": summary_message,
-            "top_selling_products_x": top_selling_products.index,
-            "top_selling_products_y": top_selling_products.values
         }
-        fig = px.line(x=top_selling_products.index, y=top_selling_products.values, 
-                     labels={"x": "Products", "y": "Quantity"})
 
-        return top_selling_products, summary_product, fig
+        fig_x = top_selling_products.index
+        fig_y = top_selling_products.values
+
+        return top_selling_products, summary_product, fig_x, fig_y
+
     except Exception as e:
-        return None, f"An error occurred: {e}"
-    
+        return None, {"error": str(e)}, None, None  # Return 4 values in error case
 
-# Product analysis
 def top_selling_by_total_sales_analysis(file):
-
     """
-     **Which products are the most profitable?** (based on total sales)
+    Which products are the most profitable? (based on total sales)
     """
-
     try:
         data, summary = process_sales_file(file)
 
@@ -191,37 +244,25 @@ def top_selling_by_total_sales_analysis(file):
             "best_selling_product": best_selling_product,
             "highest_sale_recorded": best_selling_sales,
             "summary_message": summary_message,
-            "top_selling_by_total_sales_x": top_selling_by_total_sales.index,
-            "top_selling_by_total_sales_y": top_selling_by_total_sales.values
         }
 
-        # plot results
-        fig = px.line(x=top_selling_by_total_sales.index, y=top_selling_by_total_sales.values,
-                      labels={'x': 'Product', 'y': 'Total Sales'})
+        fig_x = top_selling_by_total_sales.index
+        fig_y = top_selling_by_total_sales.values
         
-        return top_selling_by_total_sales, summary_sales, fig
-    except Exception as e:
-        return None, f"An error occured {e}"
-    
+        return top_selling_by_total_sales, summary_sales, fig_x, fig_y
 
-# Seasonal analysis
+    except Exception as e:
+        return None, {"error": str(e)}, None, None  # Return 4 values in error case
+
 def sales_trends_analysis(file):
     """
-    Analyzes sales data to determine how sales trends vary throughout the year and identifies significant changes.
-
-    Parameters:
-    file (str): Path to the sales data file.
-
-    Returns:
-    tuple: A tuple containing the sales trends DataFrame, a summary message, and the plotly figure.
+    Analyzes sales data to determine how sales trends vary throughout the year.
     """
     try:
         # Get sales by month data
-        result = sales_by_month_analysis(file)
-        if result is None or any(r is None for r in result):
+        sales_by_month, summary_month, fig_x, fig_y = sales_by_month_analysis(file)
+        if sales_by_month is None:
             raise ValueError("sales_by_month_analysis returned None")
-
-        sales_by_month, summary_message, fig = result
 
         # Calculate the month-over-month percentage change in sales
         sales_by_month = sales_by_month.sort_index()  # Ensure the index is sorted by month
@@ -232,27 +273,17 @@ def sales_trends_analysis(file):
         significant_changes = sales_by_month_pct_change[sales_by_month_pct_change.abs() > threshold]
 
         # Prepare summary message
+        summary_message = ""
         if not significant_changes.empty:
             significant_months = significant_changes.index.tolist()
-            summary_message += f"\nSignificant changes in sales were observed in the following months: {', '.join(significant_months)}"
+            summary_message = f"Significant changes in sales were observed in the following months: {', '.join(significant_months)}"
         else:
-            summary_message += "\nNo significant changes in sales were observed."
+            summary_message = "No significant changes in sales were observed."
 
-        # Create line plot with significant changes highlighted
-        fig = px.line(x=sales_by_month.index, y=sales_by_month.values,
-                      labels={"x": "Month", "y": "Total Sales"}, title='Total Sales by Month')
-        fig.add_scatter(x=significant_changes.index, y=sales_by_month[significant_changes.index],
-                        mode='markers', marker=dict(color='red', size=10), name='Significant Changes')
+        fig_x = significant_changes.index
+        fig_y = sales_by_month[significant_changes.index]
 
-        # summary_trends = {
-        #     "significant_months": significant_months,
-        #     "summary_message": summary_message
-        # } 
-        return sales_by_month, summary_message, fig
+        return sales_by_month, {"summary_message": summary_message}, fig_x, fig_y
 
     except Exception as e:
-        print(f"An error occurred in sales_trends_analysis: {e}")
-        return None, f"An error occurred: {e}", None
-    
-
-    
+        return None, {"error": str(e)}, None, None  # Return 4 values in error case
