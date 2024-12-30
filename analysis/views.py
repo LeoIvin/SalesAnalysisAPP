@@ -133,11 +133,11 @@ def get_sales_summary(request, summary_id):
             'highest_sale_recorded': str(summary.highest_sale_recorded),
             'significant_changes': summary.significant_changes,
             'sales_by_month_x': summary.sales_by_month_x,
-            'sales_by_month_y': [str(y) for y in summary.sales_by_month_y],
+            'sales_by_month_y': summary.sales_by_month_y,
             'product_sales_x': summary.product_sales_x,
-            'product_sales_y': [str(y) for y in summary.product_sales_y],
-            'total_sales_x': summary.total_sales_x,
-            'total_sales_y': [str(y) for y in summary.total_sales_y]
+            'product_sales_y': summary.product_sales_y,
+            'total_sales_x':  summary.total_sales_x,
+            'total_sales_y':  summary.total_sales_y
         }
         return Response(data)
     except SalesSummary.DoesNotExist:

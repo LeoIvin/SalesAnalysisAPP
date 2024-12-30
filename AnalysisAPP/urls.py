@@ -3,7 +3,7 @@ from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
 
-from analysis.views import upload_sales_data
+from analysis.views import upload_sales_data, get_sales_summary
 from django.urls import re_path
 from accounts.views import signup, login, test_token, ProfileUpdateView, ProfileView
 
@@ -13,7 +13,7 @@ from accounts.views import signup, login, test_token, ProfileUpdateView, Profile
 urlpatterns = [
     path("__reload__/", include("django_browser_reload.urls")),
     path("admin/", admin.site.urls),
-   
+
 
     # API Endpoints
     path('api/login/', login, name='login_api'),
@@ -23,8 +23,10 @@ urlpatterns = [
     path('profile/update/', ProfileUpdateView.as_view(), name='update_profile'),
     path('profile/', ProfileView.as_view(), name='profile'),
 
+
     # Analysis Views
     path('upload/', upload_sales_data, name="upload_sales"),
+    path('get/summary/<int:summary_id>/', get_sales_summary, name="get_summary"),
+
 
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
-
