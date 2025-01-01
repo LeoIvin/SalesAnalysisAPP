@@ -21,7 +21,7 @@ from django.views import View
 
 from .models import SalesData, SalesSummary
 
-
+from rest_framework import status
 
 @api_view(['POST', 'GET'])
 @authentication_classes([SessionAuthentication, TokenAuthentication])
@@ -118,49 +118,51 @@ def upload_sales_data(request):
 @api_view(['GET'])
 @authentication_classes([SessionAuthentication, TokenAuthentication])
 @permission_classes([IsAuthenticated])
-def get_sales_summary(request, summary_id):
+def get_sales_summary(request, summary_id=None):
     try:
-        summary = SalesSummary.objects.get(id=summary_id, sales_data__user=request.user)
-        data = {
-            'total_rows': summary.total_rows,
-            'total_sales': str(summary.total_sales),
-            'start_date': summary.start_date,
-            'end_date': summary.end_date,
-            'best_month': summary.best_month,
-            'avg_sales_by_month': str(summary.avg_sales_by_month),
-            'best_selling_product': summary.best_selling_product,
-            'highest_quantity_sold': summary.highest_quantity_sold,
-            'highest_sale_recorded': str(summary.highest_sale_recorded),
-            'significant_changes': summary.significant_changes,
-            'sales_by_month_x': summary.sales_by_month_x,
-            'sales_by_month_y': summary.sales_by_month_y,
-            'product_sales_x': summary.product_sales_x,
-            'product_sales_y': summary.product_sales_y,
-            'total_sales_x':  summary.total_sales_x,
-            'total_sales_y':  summary.total_sales_y
-        }
-        return Response(data)
+        # Debug user authentication
+        if not request.user.is_authenticated:
+            return Response({
+                "error": "User is not authenticated"
+            }, status=status.HTTP_401_UNAUTHORIZED)
+
+        if summary_id:
+            # Get specific summary for the authenticated user
+            summary = get_object_or_404(
+                SalesSummary,
+                id=summary_id,
+                sales_data__user=request.user
+            )
+        else:
+            # Get most recent summary for the authenticated user
+            summary = SalesSummary.objects.filter(
+                sales_data__user=request.user
+            ).order_by('-created_at').first()
+            
+            if not summary:
+                return Response({
+                    "error": "No summaries found for this user",
+                    "user_id": request.user.id,  # Add user info for debugging
+                    "authenticated": request.user.is_authenticated
+                }, status=status.HTTP_404_NOT_FOUND)
+        
+        # Use the same serializer as dashboard for consistency
+        from dashboard.serializers import SalesSummarySerializer
+        serializer = SalesSummarySerializer(summary)
+        
+        return Response({
+            "message": "Summary retrieved successfully",
+            "data": serializer.data
+        })
+        
     except SalesSummary.DoesNotExist:
-        return Response({"error": "Summary not found"}, status=404)
-
-
-
-
-
-            # Additional Metrics
-            #    # Convert to appropriate types
-            #     revenue = float(summary.get('total_sales', 0))
-            #     best_selling_product = summary_products.get('best_selling_product', '')
-            #     max_quantity_sold = int(summary_products.get('best_selling_quantity', 0))
-            #     average_sales_per_month = float(summary_month.get('average_sales_per_month', 0))
-            #     top_month_sales = summary_month.get('best_month', '0000-00')  # String format
-
-            #     SalesSummary.objects.update_or_create(
-            #         sales_data=sales_data, defaults={
-            #             "revenue": revenue,
-            #             "best_selling_product": best_selling_product,
-            #             "max_quantity_sold": max_quantity_sold,
-            #             "average_sales_per_month": average_sales_per_month,
-            #             # "top_month_sales": top_month_sales
-            #         }
-            #     )
+        return Response({
+            "error": "Summary not found or you don't have permission to view it",
+            "user_id": request.user.id
+        }, status=status.HTTP_404_NOT_FOUND)
+        
+    except Exception as e:
+        return Response({
+            "error": str(e),
+            "user_id": request.user.id if request.user else None
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

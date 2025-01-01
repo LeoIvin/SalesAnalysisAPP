@@ -12,6 +12,7 @@ class SalesData(models.Model):
         return f"Sales Data - {self.uploaded_at.strftime('%Y-%m-%d %H:%M')}"
 
 class SalesSummary(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, null=True)
     sales_data = models.OneToOneField(
         SalesData, 
         on_delete=models.CASCADE, 
