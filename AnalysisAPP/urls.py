@@ -24,4 +24,7 @@ urlpatterns = [
     path('upload/', upload_sales_data, name='upload_sales'),
     path('dashboard/', DashboardView.as_view(), name='dashboard_view'),
 
+    # Billing
+    # path('payments/')
+
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
