@@ -20,19 +20,28 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/5.0/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-p%75may%vx&myi0ll1^*%qv8%ax1%-8&(&7nfymnt9@!_&+-$-'
+import os
+from dotenv import load_dotenv
+
+# Load environment variables from .env file
+load_dotenv()
+
+SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-p%75may%vx&myi0ll1^*%qv8%ax1%-8&(&7nfymnt9@!_&+-$-')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = os.environ.get('DEBUG', 'False').lower() == 'true'
 
-ALLOWED_HOSTS = []
+# Parse comma-separated ALLOWED_HOSTS from environment variable
+ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',')
 
 import os
 
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+# We already have BASE_DIR defined above using Path
+# This is for backward compatibility
+BASE_DIR_STR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 MEDIA_URL = '/media/'
-MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+MEDIA_ROOT = os.path.join(BASE_DIR_STR, 'media')
 
 
 
@@ -160,16 +169,31 @@ WSGI_APPLICATION = 'AnalysisAPP.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.0/ref/settings/#databases
 
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.postgresql_psycopg2',
-        'NAME': 'AnalysisDb',
-        'USER': 'postgres',
-        'PASSWORD': 'chidubem',
-        'HOST': 'localhost',
-        'PORT': '5432'
+import dj_database_url
+
+# Use DATABASE_URL from environment if available
+import dj_database_url
+
+DATABASE_URL = os.environ.get('DATABASE_URL')
+
+if DATABASE_URL:
+    DATABASES = {
+        'default': dj_database_url.config(default=DATABASE_URL, conn_max_age=600)
     }
-}
+else:
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.postgresql_psycopg2',
+            'NAME': os.environ.get('DB_NAME', 'postgres'),
+            'USER': os.environ.get('DB_USER', 'postgres.cifpolbiajueyvbkfjvi'),
+            'PASSWORD': os.environ.get('DB_PASSWORD', '_DN$JGcR#uLQ4aC'),
+            'HOST': os.environ.get('DB_HOST', 'aws-0-eu-central-1.pooler.supabase.com'),  
+            'PORT': os.environ.get('DB_PORT', '6543'), 
+            'OPTIONS': {
+                'options': '-c search_path=public'
+            }
+        }
+    }
 
 REST_FRAMEWORK = {
     'DEFAULT_RENDERER_CLASSES': (
@@ -224,7 +248,13 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/5.0/howto/static-files/
 
 STATIC_URL = '/static/'
-STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+STATIC_ROOT = os.path.join(BASE_DIR_STR, 'staticfiles')
+
+# Add this for Render deployment
+if not DEBUG:
+    # Enable WhiteNoise for serving static files efficiently
+    MIDDLEWARE.insert(1, 'whitenoise.middleware.WhiteNoiseMiddleware')
+    STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.0/ref/settings/#default-auto-field
