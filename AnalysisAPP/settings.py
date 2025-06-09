@@ -10,7 +10,11 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.0/ref/settings/
 """
 
+import os
+from dotenv import load_dotenv
 from pathlib import Path
+
+load_dotenv()
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -20,16 +24,16 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/5.0/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-p%75may%vx&myi0ll1^*%qv8%ax1%-8&(&7nfymnt9@!_&+-$-'
+SECRET_KEY = os.getenv('SECRET_KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = os.environ.get('DEBUG', 'False').lower() == 'true'
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['127.0.0.1', 'localhost']
 
-import os
-
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+RENDER_EXTERNAL_HOSTNAME = os.environ.get('RENDER_EXTERNAL_HOSTNAME')
+if RENDER_EXTERNAL_HOSTNAME:
+    ALLOWED_HOSTS.append(RENDER_EXTERNAL_HOSTNAME)
 
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
@@ -93,6 +97,12 @@ LOGIN_URL = '/login/'
 
 # Application definition
 INSTALLED_APPS = [
+    'django.contrib.admin',
+    'django.contrib.auth',
+    'django.contrib.contenttypes',
+    'django.contrib.sessions',
+    'django.contrib.messages',
+    'django.contrib.staticfiles',
     'accounts.apps.AccountsConfig', 
     'rest_framework_swagger',
     'rest_framework',
@@ -100,12 +110,6 @@ INSTALLED_APPS = [
     'django_browser_reload',
     'corsheaders',
     'analysis',
-    'django.contrib.admin',
-    'django.contrib.auth',
-    'django.contrib.contenttypes',
-    'django.contrib.sessions',
-    'django.contrib.messages',
-    'django.contrib.staticfiles',
 ]
 
 MIDDLEWARE = [
@@ -113,23 +117,24 @@ MIDDLEWARE = [
     'django.middleware.common.CommonMiddleware',
     "django_browser_reload.middleware.BrowserReloadMiddleware",
     'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    'corsheaders.middleware.CorsMiddleware'
 ]
 
 
 # During development, you can allow all origins
 CORS_ALLOW_ALL_ORIGINS = True
 
-# CORS_ALLOWED_ORIGINS = [
-#     'http://localhost:3000',  # Your frontend origin
-#     'http://127.0.0.1:3000',
-#     'http://127.0.0.1:5500'
-# ]
+CORS_ALLOWED_ORIGINS = [
+    'http://localhost:3000',  # Your frontend origin
+    'http://127.0.0.1:3000',
+    'http://127.0.0.1:5500',
+    'https://datus-analysis.vercel.app'
+]
 
 
 ROOT_URLCONF = 'AnalysisAPP.urls'
@@ -162,14 +167,19 @@ WSGI_APPLICATION = 'AnalysisAPP.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.postgresql_psycopg2',
-        'NAME': 'AnalysisDb',
-        'USER': 'postgres',
-        'PASSWORD': 'chidubem',
-        'HOST': 'localhost',
-        'PORT': '5432'
+        'ENGINE': os.getenv('DB_ENGINE'),
+        'NAME': os.getenv('DB_NAME'),
+        'USER': os.getenv('DB_USER'),
+        'PASSWORD': os.getenv('DB_PASSWORD'),
+        'HOST': os.getenv('DB_HOST'), 
+        'PORT': os.getenv('DB_PORT'),
+        'OPTIONS': {
+            'sslmode': 'require'
+        },
     }
 }
+
+
 
 REST_FRAMEWORK = {
     'DEFAULT_RENDERER_CLASSES': (
@@ -225,6 +235,18 @@ USE_TZ = True
 
 STATIC_URL = '/static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+STATICFILES_DIRS = [
+    os.path.join(BASE_DIR, "static"),
+]
+
+# Whitenoise Settings
+STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
+WHITENOISE_MAX_AGE = 31536000  # Cache static files for one year
+
+# Media files (User Uploaded Files like Images)
+# https://docs.djangoproject.com/en/5.0/topics/files/
+MEDIA_URL = '/media/' # URL prefix for media files
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media') # Absolute path to the media directory
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.0/ref/settings/#default-auto-field
