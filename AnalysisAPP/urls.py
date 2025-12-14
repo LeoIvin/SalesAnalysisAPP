@@ -27,7 +27,6 @@ urlpatterns = [
     path('profile/', ProfileView.as_view(), name='profile'),
 
     # Analysis & Dashboard Endpoints
-    # Analysis & Dashboard Endpoints
     path('api/summary/', get_sales_summary, name='get_latest_summary'),
     path('api/summary/<int:summary_id>/', get_sales_summary, name='get_summary'),
     path('get/summary/<int:summary_id>/', get_sales_summary, name='get_summary_frontend'), # Match frontend
