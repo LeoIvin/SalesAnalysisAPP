@@ -14,7 +14,7 @@ from django.shortcuts import get_object_or_404
 
 from rest_framework.decorators import authentication_classes, permission_classes
 from rest_framework.authentication import SessionAuthentication, TokenAuthentication
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAuthenticated, AllowAny
 
 import requests
 from django.urls import reverse
@@ -39,6 +39,8 @@ from django.views.decorators.csrf import csrf_exempt
 
 # DRF API Views
 @api_view(["POST"])
+@permission_classes([AllowAny])
+@authentication_classes([])
 def login(request):
     username = request.data.get("username")
     password = request.data.get("password")
@@ -69,6 +71,8 @@ def login(request):
 
 
 @api_view(["POST"])
+@permission_classes([AllowAny])
+@authentication_classes([])
 def signup(request):
     serializer = UserSerializer(data=request.data)
 
