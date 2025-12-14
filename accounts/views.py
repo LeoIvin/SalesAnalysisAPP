@@ -42,9 +42,17 @@ from django.views.decorators.csrf import csrf_exempt
 def login(request):
     username = request.data.get("username")
     password = request.data.get("password")
+    email = request.data.get("email")
 
-    if not username or not password:
-        return Response({"error": "Username and password are required."}, status=status.HTTP_400_BAD_REQUEST)
+    if (not username and not email) or not password:
+        return Response({"error": "Username/Email and password are required."}, status=status.HTTP_400_BAD_REQUEST)
+    
+    if not username and email:
+        try:
+            user = User.objects.get(email=email)
+            username = user.username
+        except User.DoesNotExist:
+            return Response({"error": "Invalid credentials."}, status=status.HTTP_401_UNAUTHORIZED)
     
     user = authenticate(username=username, password=password)
 
