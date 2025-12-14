@@ -49,6 +49,7 @@ def login(request):
     user = authenticate(username=username, password=password)
 
     if user is None:
+        print(f"Invalid credentials for user: {username}")
         return Response({"error": "Invalid credentials."}, status=status.HTTP_401_UNAUTHORIZED)
     
     # Generate or retrieve token
@@ -75,6 +76,7 @@ def signup(request):
         return Response({"token": token.key, "user": serializer.data}, status=status.HTTP_201_CREATED)
     
     # Handle invalid data by returning validation errors
+    print(f"Signup validation errors: {serializer.errors}")
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         
 
